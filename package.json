@@ -23,7 +23,8 @@
     "vite": "^5.0.0"
   },
   "dependencies": {
-    "@babylonjs/core": "^7.0.0",
-    "@babylonjs/loaders": "^7.0.0"
+    "@babylonjs/core": "^8.39.2",
+    "@babylonjs/loaders": "^8.39.2",
+    "@babylonjs/materials": "^8.39.2"
   }
 }
