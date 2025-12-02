@@ -1,5 +1,5 @@
 import * as BABYLON from '@babylonjs/core';
-import { WaterMaterial } from '@babylonjs/materials/water/waterMaterial';
+import { WaterMaterial } from '@babylonjs/materials';
 
 'use strict';
 
