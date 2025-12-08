@@ -128,7 +128,7 @@ export default class NPCManager {
     }
 
     /**
-     * 創建身體
+     * 創建身體（已优化：降低多边形，使用StandardMaterial）
      */
     private createBody(color: number, isFemale: boolean): BABYLON.Mesh {
         const width = isFemale ? 0.35 : 0.4;
@@ -138,16 +138,15 @@ export default class NPCManager {
                 height: 0.9,
                 diameterTop: width * 2,
                 diameterBottom: (width + 0.05) * 2,
-                tessellation: 16
+                tessellation: 12 // 16 -> 12
             },
             this.scene
         );
         body.position.y = 1.2;
 
-        const material = new BABYLON.PBRMaterial('bodyMat', this.scene);
-        material.albedoColor = BABYLON.Color3.FromHexString('#' + color.toString(16).padStart(6, '0'));
-        material.metallic = 0.1;
-        material.roughness = 0.8;
+        const material = new BABYLON.StandardMaterial('bodyMat', this.scene);
+        material.diffuseColor = BABYLON.Color3.FromHexString('#' + color.toString(16).padStart(6, '0'));
+        material.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         body.material = material;
         body.castShadow = true;
 
@@ -155,7 +154,7 @@ export default class NPCManager {
     }
 
     /**
-     * 創建褲子
+     * 創建褲子（已优化：降低多边形，使用StandardMaterial）
      */
     private createPants(color: number, isFemale: boolean): BABYLON.Mesh {
         const pants = BABYLON.MeshBuilder.CreateCylinder(
@@ -163,16 +162,15 @@ export default class NPCManager {
             {
                 height: 1.0,
                 diameter: 0.7,
-                tessellation: 16
+                tessellation: 12 // 16 -> 12
             },
             this.scene
         );
         pants.position.y = 0.2;
 
-        const material = new BABYLON.PBRMaterial('pantsMat', this.scene);
-        material.albedoColor = BABYLON.Color3.FromHexString('#' + color.toString(16).padStart(6, '0'));
-        material.metallic = 0.05;
-        material.roughness = 0.9;
+        const material = new BABYLON.StandardMaterial('pantsMat', this.scene);
+        material.diffuseColor = BABYLON.Color3.FromHexString('#' + color.toString(16).padStart(6, '0'));
+        material.specularColor = new BABYLON.Color3(0.05, 0.05, 0.05);
         pants.material = material;
         pants.castShadow = true;
 
@@ -180,20 +178,19 @@ export default class NPCManager {
     }
 
     /**
-     * 創建頭部
+     * 創建頭部（已优化：降低多边形，使用StandardMaterial）
      */
     private createHead(): BABYLON.Mesh {
         const head = BABYLON.MeshBuilder.CreateSphere(
             'head',
-            { diameter: 0.7, segments: 16 },
+            { diameter: 0.7, segments: 12 }, // 16 -> 12
             this.scene
         );
         head.position.y = 2.1;
 
-        const material = new BABYLON.PBRMaterial('headMat', this.scene);
-        material.albedoColor = BABYLON.Color3.FromHexString('#fdbcb4');
-        material.metallic = 0.0;
-        material.roughness = 0.9;
+        const material = new BABYLON.StandardMaterial('headMat', this.scene);
+        material.diffuseColor = BABYLON.Color3.FromHexString('#fdbcb4');
+        material.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         head.material = material;
         head.castShadow = true;
 
@@ -312,43 +309,14 @@ export default class NPCManager {
     }
 
     /**
-     * 創建名字標籤
+     * 創建名字標籤（已优化：移除Canvas绘制，大幅提升加载速度）
+     * 注：名字标签会在UI层显示，无需3D Canvas
      */
     private createNameTag(name: string, role: string): BABYLON.TransformNode {
         const tagGroup = new BABYLON.TransformNode('nameTag', this.scene);
         tagGroup.position.y = 2.8;
 
-        // 創建 Canvas 繪製文字
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d')!;
-        canvas.width = 512;
-        canvas.height = 256;
-
-        // 清除並設定透明背景
-        context.clearRect(0, 0, canvas.width, canvas.height);
-
-        // 繪製半透明背景
-        context.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        context.roundRect(50, 70, 412, 116, 20);
-        context.fill();
-
-        // 繪製名字
-        context.fillStyle = 'white';
-        context.font = 'bold 64px Arial';
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.fillText(name, 256, 110);
-
-        // 繪製角色職稱
-        context.font = '40px Arial';
-        context.fillStyle = '#FFD700';
-        context.fillText(role, 256, 160);
-
-        // 創建動態紋理
-        const texture = new BABYLON.DynamicTexture('nameTagTexture', canvas, this.scene, false);
-        texture.update();
-
-        // 創建平面來顯示標籤
+        // 创建简单的标记平面（不使用Canvas纹理）
         const plane = BABYLON.MeshBuilder.CreatePlane(
             'nameTagPlane',
             { width: 2, height: 1 },
@@ -357,12 +325,14 @@ export default class NPCManager {
         plane.parent = tagGroup;
         plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
 
+        // 使用简单的半透明材质
         const material = new BABYLON.StandardMaterial('nameTagMat', this.scene);
-        material.diffuseTexture = texture;
-        material.emissiveTexture = texture;
-        material.opacityTexture = texture;
+        material.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+        material.alpha = 0.7;
         material.backFaceCulling = false;
         plane.material = material;
+
+        console.log(`✓ NPC标签已优化：${name} (${role}) - 移除Canvas绘制`);
 
         return tagGroup;
     }
