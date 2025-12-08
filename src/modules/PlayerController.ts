@@ -12,7 +12,7 @@ export default class PlayerController {
     // 移動速度
     private readonly MOVE_SPEED = 0.3;
     private readonly SPRINT_SPEED = 0.6;
-    private readonly MOUSE_SENSITIVITY = 0.002;
+    private readonly MOUSE_SENSITIVITY = 0.006; // 提高 3 倍靈敏度
 
     // 鍵盤狀態
     private keys: Map<string, boolean>;
