@@ -230,7 +230,8 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建酒瓶（使用GLB模型）
+     * 創建酒瓶（使用GLB模型 + 簡化碰撞體）
+     * 效能優化：使用簡單的圓柱體作為碰撞體和互動對象，GLB模型只用於視覺
      */
     private async createBarBottles(): Promise<void> {
         const bottleConfigs = [
@@ -256,33 +257,59 @@ export default class BarEnvironment {
 
         for (const config of bottleConfigs) {
             try {
-                // 嘗試加載 GLB 模型
-                const bottleMesh = await this.modelLoader.loadModel({
-                    name: config.name,
+                // ===== 步驟1: 創建簡單的圓柱體碰撞體 =====
+                const collider = BABYLON.MeshBuilder.CreateCylinder(
+                    `${config.name}_collider`,
+                    { height: 0.8, diameter: 0.3, tessellation: 8 },
+                    this.scene
+                );
+                collider.position = config.position;
+
+                // 讓碰撞體不可見但可被射線檢測
+                collider.visibility = 0;
+                collider.isPickable = true;
+
+                // ===== 步驟2: 加載 GLB 視覺模型 =====
+                const visualMesh = await this.modelLoader.loadModel({
+                    name: `${config.name}_visual`,
                     modelPath: config.modelPath,
-                    position: config.position,
+                    position: BABYLON.Vector3.Zero(), // 相對位置，因為會被父級化
                     scale: new BABYLON.Vector3(0.01, 0.01, 0.01)
                 });
 
-                bottleMesh.castShadow = true;
-                const bottle = bottleMesh as BABYLON.Mesh;
-                this.bottles.push(bottle);
+                visualMesh.castShadow = true;
 
-                // 註冊為可互動物品
+                // ===== 步驟3: 將視覺模型父級化到碰撞體 =====
+                visualMesh.parent = collider;
+
+                // ===== 步驟4: 確保視覺模型不參與射線檢測 =====
+                // 禁用視覺模型及其所有子網格的拾取和碰撞檢測
+                visualMesh.isPickable = false;
+                visualMesh.checkCollisions = false;
+
+                // 遞迴禁用所有子網格
+                visualMesh.getChildMeshes().forEach(childMesh => {
+                    childMesh.isPickable = false;
+                    childMesh.checkCollisions = false;
+                });
+
+                // ===== 步驟5: 將碰撞體註冊為互動物品（不是視覺模型）=====
+                this.bottles.push(collider as BABYLON.Mesh);
+
                 this.interaction.registerInteractable(
-                    bottle,
+                    collider as BABYLON.Mesh,
                     ItemType.BOTTLE,
                     config.liquorType
                 );
 
-                // 添加物理
-                this.physics.addCylinderBody(bottle, {
+                // ===== 步驟6: 為碰撞體添加物理（不是視覺模型）=====
+                this.physics.addCylinderBody(collider as BABYLON.Mesh, {
                     mass: 0.5,
                     restitution: 0.3,
                     friction: 0.6
                 });
 
-                console.log(`✓ Loaded GLB bottle: ${config.name}`);
+                console.log(`✓ Loaded GLB bottle with collider: ${config.name}`);
             } catch (error) {
                 console.error(`Failed to load bottle ${config.name}, using fallback:`, error);
                 // 如果 GLB 加載失敗，使用備用幾何體
@@ -434,25 +461,50 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建調酒工具（使用GLB模型）
+     * 創建調酒工具（使用GLB模型 + 簡化碰撞體）
+     * 效能優化：使用簡單的圓柱體作為碰撞體和互動對象，GLB模型只用於視覺
      */
     private async createBarTools(): Promise<void> {
-        // Shaker（搖酒器）- 使用GLB模型
+        // Shaker（搖酒器）- 使用GLB模型 + 碰撞體
         try {
-            const shakerMesh = await this.modelLoader.loadModel({
-                name: 'shaker',
+            // ===== 步驟1: 創建簡單的圓柱體碰撞體 =====
+            const shakerCollider = BABYLON.MeshBuilder.CreateCylinder(
+                'shaker_collider',
+                { height: 0.65, diameterTop: 0.35, diameterBottom: 0.4, tessellation: 8 },
+                this.scene
+            );
+            shakerCollider.position = new BABYLON.Vector3(-5, 1.2, -3);
+
+            // 讓碰撞體不可見但可被射線檢測
+            shakerCollider.visibility = 0;
+            shakerCollider.isPickable = true;
+
+            // ===== 步驟2: 加載 GLB 視覺模型 =====
+            const shakerVisual = await this.modelLoader.loadModel({
+                name: 'shaker_visual',
                 modelPath: '/materials/Stainless_Steel_Cockt_1208143655_texture.glb',
-                position: new BABYLON.Vector3(-5, 1.2, -3),
+                position: BABYLON.Vector3.Zero(),
                 scale: new BABYLON.Vector3(0.01, 0.01, 0.01)
             });
 
-            shakerMesh.castShadow = true;
-            this.barTools.shaker = shakerMesh as BABYLON.Mesh;
+            shakerVisual.castShadow = true;
 
-            // 註冊為可互動物品
+            // ===== 步驟3: 將視覺模型父級化到碰撞體 =====
+            shakerVisual.parent = shakerCollider;
+
+            // ===== 步驟4: 確保視覺模型不參與射線檢測 =====
+            shakerVisual.isPickable = false;
+            shakerVisual.checkCollisions = false;
+            shakerVisual.getChildMeshes().forEach(childMesh => {
+                childMesh.isPickable = false;
+                childMesh.checkCollisions = false;
+            });
+
+            // ===== 步驟5: 將碰撞體註冊為互動物品 =====
+            this.barTools.shaker = shakerCollider as BABYLON.Mesh;
             this.interaction.registerInteractable(this.barTools.shaker, ItemType.SHAKER);
 
-            // 添加物理
+            // ===== 步驟6: 為碰撞體添加物理 =====
             this.physics.addCylinderBody(this.barTools.shaker, {
                 mass: 0.6,
                 restitution: 0.4,
@@ -462,7 +514,7 @@ export default class BarEnvironment {
             // 初始化 Shaker 容器
             this.cocktail.initContainer(this.barTools.shaker, 500);
 
-            console.log('✓ Loaded GLB shaker model');
+            console.log('✓ Loaded GLB shaker with collider');
         } catch (error) {
             console.error('Failed to load shaker GLB, using fallback:', error);
             // 如果加載失敗，使用備用幾何體
