@@ -1,10 +1,11 @@
 /**
  * NPC 管理器 - 創建和管理 NPC 角色
- * 使用簡單的幾何體和 PBR 材質
+ * 使用 GLB 模型或簡單的幾何體和 PBR 材質
  */
 
 import * as BABYLON from '@babylonjs/core';
 import { ItemType } from '../types/types';
+import ModelLoader from './ModelLoader';
 
 interface NPCConfig {
     name: string;
@@ -15,6 +16,7 @@ interface NPCConfig {
     dialogues: string[];
     gender?: 'male' | 'female';
     rotation?: number;
+    useGLBModel?: boolean;
 }
 
 interface NPCData {
@@ -30,24 +32,27 @@ interface NPCData {
 export default class NPCManager {
     private scene: BABYLON.Scene;
     private npcs: BABYLON.Mesh[] = [];
+    private modelLoader: ModelLoader;
 
     constructor(scene: BABYLON.Scene) {
         this.scene = scene;
+        this.modelLoader = new ModelLoader(scene);
         this.createNPCs();
     }
 
     /**
      * 創建所有 NPC
      */
-    private createNPCs(): void {
-        // 創建 NPC 1 - Gustave（調酒社創始社長）
-        this.addNPC({
+    private async createNPCs(): Promise<void> {
+        // 創建 NPC 1 - Gustave（調酒社創始社長）- 使用 GLB 模型
+        await this.addNPC({
             name: 'Gustave',
             position: new BABYLON.Vector3(8, 0, -5),
             shirtColor: 0x0066cc,
             pantsColor: 0x1a1a1a,
             role: '調酒社創始社長',
             gender: 'male',
+            useGLBModel: true,
             dialogues: [
                 '嗨！我是 Gustave Yang，NCU 分子創意飲品研究社的創辦人！',
                 '分子調酒不只是技術，更是科學與藝術的融合。',
@@ -57,14 +62,15 @@ export default class NPCManager {
             ]
         });
 
-        // 創建 NPC 2 - Seaton（調酒社共同創辦人）
-        this.addNPC({
+        // 創建 NPC 2 - Seaton（調酒社共同創辦人）- 使用 GLB 模型
+        await this.addNPC({
             name: 'Seaton',
             position: new BABYLON.Vector3(-8, 0, -5),
             shirtColor: 0xcc0066,
             pantsColor: 0x333333,
             role: '調酒社共同創辦人',
             gender: 'male',
+            useGLBModel: true,
             dialogues: [
                 '哈囉！我是 Seaton 曦樂，也是社團的共同創辦人！',
                 '我最喜歡日本威士忌，特別是山崎12年。',
@@ -78,7 +84,54 @@ export default class NPCManager {
     /**
      * 添加單個 NPC
      */
-    private addNPC(config: NPCConfig): void {
+    private async addNPC(config: NPCConfig): Promise<void> {
+        let npc: BABYLON.Mesh;
+
+        // 如果配置要求使用 GLB 模型，嘗試加載
+        if (config.useGLBModel) {
+            try {
+                const npcModelMesh = await this.modelLoader.loadModel({
+                    name: `npc_${config.name}`,
+                    modelPath: '/materials/person_0.glb',
+                    position: config.position,
+                    rotation: config.rotation ? new BABYLON.Vector3(0, config.rotation, 0) : undefined,
+                    scale: new BABYLON.Vector3(1, 1, 1)
+                });
+
+                npc = npcModelMesh as BABYLON.Mesh;
+
+                // 創建名字標籤
+                const nameTag = this.createNameTag(config.name, config.role);
+                nameTag.parent = npc;
+
+                console.log(`✓ Loaded GLB NPC model: ${config.name}`);
+            } catch (error) {
+                console.error(`Failed to load NPC GLB model for ${config.name}, using fallback:`, error);
+                // 如果加載失敗，使用幾何體創建
+                npc = this.createGeometricNPC(config);
+            }
+        } else {
+            // 使用幾何體創建 NPC
+            npc = this.createGeometricNPC(config);
+        }
+
+        // 儲存 NPC 資料
+        (npc as any).userData = {
+            name: config.name,
+            role: config.role,
+            dialogues: config.dialogues,
+            currentDialogue: 0,
+            originalY: config.position.y,
+            baseRotation: config.rotation || 0
+        } as NPCData;
+
+        this.npcs.push(npc);
+    }
+
+    /**
+     * 使用幾何體創建 NPC（備用方案）
+     */
+    private createGeometricNPC(config: NPCConfig): BABYLON.Mesh {
         const npc = new BABYLON.Mesh(`npc_${config.name}`, this.scene);
         const isFemale = config.gender === 'female';
 
@@ -114,17 +167,7 @@ export default class NPCManager {
             npc.rotation.y = config.rotation;
         }
 
-        // 儲存 NPC 資料
-        (npc as any).userData = {
-            name: config.name,
-            role: config.role,
-            dialogues: config.dialogues,
-            currentDialogue: 0,
-            originalY: config.position.y,
-            baseRotation: config.rotation || 0
-        } as NPCData;
-
-        this.npcs.push(npc);
+        return npc;
     }
 
     /**

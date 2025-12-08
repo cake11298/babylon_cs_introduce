@@ -230,8 +230,7 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建酒瓶（優化版：使用高品質幾何體代替FBX）
-     * 注意：FBX模型因頂點過多（2MB+）會導致性能問題，已改用優化幾何體
+     * 創建酒瓶（使用GLB模型）
      */
     private async createBarBottles(): Promise<void> {
         const bottleConfigs = [
@@ -239,46 +238,82 @@ export default class BarEnvironment {
                 name: 'bottle_whiskey_1',
                 position: new BABYLON.Vector3(-2, 1.9, -8),
                 liquorType: 'whiskey',
-                color: new BABYLON.Color3(0.6, 0.3, 0.1) // 琥珀色威士忌
+                modelPath: '/materials/Bottle_of_Maker_s_Mar_1208150007_texture.glb'
             },
             {
                 name: 'bottle_gin',
                 position: new BABYLON.Vector3(0, 1.9, -8),
                 liquorType: 'gin',
-                color: new BABYLON.Color3(0.9, 0.95, 0.95) // 透明琴酒
+                modelPath: '/materials/Gin_Bottle_Image_1208150011_texture.glb'
             },
             {
                 name: 'bottle_whiskey_2',
                 position: new BABYLON.Vector3(2, 1.9, -8),
                 liquorType: 'whiskey',
-                color: new BABYLON.Color3(0.6, 0.3, 0.1) // 琥珀色威士忌
+                modelPath: '/materials/Bottle_of_Maker_s_Mar_1208150007_texture.glb'
             }
         ];
 
         for (const config of bottleConfigs) {
-            const bottle = this.createOptimizedBottle(
-                config.name,
-                config.position,
-                config.color
-            );
+            try {
+                // 嘗試加載 GLB 模型
+                const bottleMesh = await this.modelLoader.loadModel({
+                    name: config.name,
+                    modelPath: config.modelPath,
+                    position: config.position,
+                    scale: new BABYLON.Vector3(0.01, 0.01, 0.01)
+                });
 
-            this.bottles.push(bottle);
+                bottleMesh.castShadow = true;
+                const bottle = bottleMesh as BABYLON.Mesh;
+                this.bottles.push(bottle);
 
-            // 註冊為可互動物品
-            this.interaction.registerInteractable(
-                bottle,
-                ItemType.BOTTLE,
-                config.liquorType
-            );
+                // 註冊為可互動物品
+                this.interaction.registerInteractable(
+                    bottle,
+                    ItemType.BOTTLE,
+                    config.liquorType
+                );
 
-            // 添加物理
-            this.physics.addCylinderBody(bottle, {
-                mass: 0.5,
-                restitution: 0.3,
-                friction: 0.6
-            });
+                // 添加物理
+                this.physics.addCylinderBody(bottle, {
+                    mass: 0.5,
+                    restitution: 0.3,
+                    friction: 0.6
+                });
 
-            console.log(`✓ Created optimized bottle: ${config.name}`);
+                console.log(`✓ Loaded GLB bottle: ${config.name}`);
+            } catch (error) {
+                console.error(`Failed to load bottle ${config.name}, using fallback:`, error);
+                // 如果 GLB 加載失敗，使用備用幾何體
+                const color = config.liquorType === 'whiskey'
+                    ? new BABYLON.Color3(0.6, 0.3, 0.1)
+                    : new BABYLON.Color3(0.9, 0.95, 0.95);
+
+                const bottle = this.createOptimizedBottle(
+                    config.name,
+                    config.position,
+                    color
+                );
+
+                this.bottles.push(bottle);
+
+                // 註冊為可互動物品
+                this.interaction.registerInteractable(
+                    bottle,
+                    ItemType.BOTTLE,
+                    config.liquorType
+                );
+
+                // 添加物理
+                this.physics.addCylinderBody(bottle, {
+                    mass: 0.5,
+                    restitution: 0.3,
+                    friction: 0.6
+                });
+
+                console.log(`✓ Created fallback bottle: ${config.name}`);
+            }
         }
     }
 
@@ -399,15 +434,14 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建調酒工具（使用FBX模型）
+     * 創建調酒工具（使用GLB模型）
      */
     private async createBarTools(): Promise<void> {
-        // Shaker（搖酒器）- 使用FBX模型
+        // Shaker（搖酒器）- 使用GLB模型
         try {
-            const shakerMesh = await this.modelLoader.loadFBXModel({
+            const shakerMesh = await this.modelLoader.loadModel({
                 name: 'shaker',
-                modelPath: '/materials/Stainless_Steel_Cockt_1208132913_texture.fbx',
-                texturePath: '/materials/Stainless_Steel_Cockt_1208132913_texture.png',
+                modelPath: '/materials/Stainless_Steel_Cockt_1208143655_texture.glb',
                 position: new BABYLON.Vector3(-5, 1.2, -3),
                 scale: new BABYLON.Vector3(0.01, 0.01, 0.01)
             });
@@ -428,9 +462,9 @@ export default class BarEnvironment {
             // 初始化 Shaker 容器
             this.cocktail.initContainer(this.barTools.shaker, 500);
 
-            console.log('✓ Loaded FBX shaker model');
+            console.log('✓ Loaded GLB shaker model');
         } catch (error) {
-            console.error('Failed to load shaker FBX, using fallback:', error);
+            console.error('Failed to load shaker GLB, using fallback:', error);
             // 如果加載失敗，使用備用幾何體
             const shaker = BABYLON.MeshBuilder.CreateCylinder(
                 'shaker',

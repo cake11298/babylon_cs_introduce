@@ -23,13 +23,14 @@ export default class ModelLoader {
     }
 
     /**
-     * 加载FBX模型（带超时保护）
+     * 加载3D模型（支持GLB、FBX等格式，带超时保护）
      */
-    async loadFBXModel(config: ModelConfig): Promise<BABYLON.AbstractMesh> {
+    async loadModel(config: ModelConfig): Promise<BABYLON.AbstractMesh> {
         try {
-            console.log(`Loading FBX model: ${config.name} from ${config.modelPath}`);
+            const fileExtension = config.modelPath.split('.').pop()?.toLowerCase();
+            console.log(`Loading ${fileExtension?.toUpperCase()} model: ${config.name} from ${config.modelPath}`);
 
-            // 添加5秒超时保护，防止加載卡住
+            // 添加10秒超时保护，防止加載卡住
             const result = await Promise.race([
                 BABYLON.SceneLoader.ImportMeshAsync(
                     '',
@@ -38,7 +39,7 @@ export default class ModelLoader {
                     this.scene
                 ),
                 new Promise<never>((_, reject) =>
-                    setTimeout(() => reject(new Error('Model loading timeout')), 5000)
+                    setTimeout(() => reject(new Error('Model loading timeout')), 10000)
                 )
             ]);
 
@@ -68,8 +69,9 @@ export default class ModelLoader {
                 rootMesh.scaling = new BABYLON.Vector3(0.01, 0.01, 0.01);
             }
 
-            // 如果有贴图，应用贴图
-            if (config.texturePath) {
+            // GLB 檔案通常已經包含材質，不需要額外貼圖
+            // FBX 可能需要外部貼圖
+            if (config.texturePath && fileExtension === 'fbx') {
                 this.applyTexture(result.meshes, config.texturePath);
             }
 
@@ -77,7 +79,7 @@ export default class ModelLoader {
             result.meshes.forEach(mesh => {
                 if (mesh instanceof BABYLON.Mesh) {
                     mesh.receiveShadows = true;
-                    // 禁用FBX模型子網格的碰撞檢測，避免ray casting問題
+                    // 禁用子網格的碰撞檢測，避免ray casting問題
                     mesh.isPickable = false;
                 }
             });
@@ -94,11 +96,19 @@ export default class ModelLoader {
 
             return rootMesh;
         } catch (error) {
-            console.error(`Failed to load FBX model ${config.name}:`, error);
+            console.error(`Failed to load model ${config.name}:`, error);
             console.warn(`Using fallback mesh for ${config.name}`);
             // 返回一个简单的替代网格
             return this.createFallbackMesh(config.name, config.position);
         }
+    }
+
+    /**
+     * 加载FBX模型（保留向後兼容性）
+     * @deprecated 使用 loadModel() 替代
+     */
+    async loadFBXModel(config: ModelConfig): Promise<BABYLON.AbstractMesh> {
+        return this.loadModel(config);
     }
 
     /**
