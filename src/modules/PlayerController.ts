@@ -58,7 +58,11 @@ export default class PlayerController {
         // 啟用碰撞
         this.camera.checkCollisions = true;
         this.camera.applyGravity = true;
-        this.camera.ellipsoid = new BABYLON.Vector3(0.5, 1, 0.5);
+        // 調整碰撞橢球體大小，避免相機穿模
+        // x: 0.6 (寬度) y: 0.9 (高度，從眼睛到腳) z: 0.6 (深度)
+        this.camera.ellipsoid = new BABYLON.Vector3(0.6, 0.9, 0.6);
+        // 設置橢球體偏移，確保相機在玩家頭部位置
+        this.camera.ellipsoidOffset = new BABYLON.Vector3(0, 0, 0);
 
         // 設置相機限制（防止看太高或太低）
         this.camera.upperBetaLimit = Math.PI / 2 + 0.1;
