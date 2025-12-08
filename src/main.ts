@@ -104,41 +104,48 @@ class BarSimulator {
         try {
             // 顯示載入畫面
             this.showLoadingScreen();
+            this.updateLoadingProgress(0, '正在初始化...');
 
-            // 1. 初始化物理系統
+            // 1. 初始化物理系統（這是最慢的部分）
+            this.updateLoadingProgress(10, '正在載入物理引擎...');
             this.physicsSystem = new PhysicsSystem(this.scene);
             await this.physicsSystem.initialize();
-            console.log('✓ Physics system initialized');
+            this.updateLoadingProgress(30, '✓ 物理引擎已載入');
 
             // 2. 初始化互動系統
+            this.updateLoadingProgress(40, '正在初始化互動系統...');
             this.interactionSystem = new InteractionSystem(
                 this.camera,
                 this.scene,
                 this.physicsSystem
             );
-            console.log('✓ Interaction system initialized');
+            this.updateLoadingProgress(50, '✓ 互動系統已初始化');
 
             // 3. 初始化調酒系統
+            this.updateLoadingProgress(55, '正在初始化調酒系統...');
             this.cocktailSystem = new CocktailSystem(
                 this.scene,
                 this.interactionSystem
             );
             this.interactionSystem.setCocktailSystem(this.cocktailSystem);
-            console.log('✓ Cocktail system initialized');
+            this.updateLoadingProgress(60, '✓ 調酒系統已初始化');
 
             // 4. 初始化玩家控制器
+            this.updateLoadingProgress(65, '正在初始化玩家控制...');
             this.playerController = new PlayerController(
                 this.camera,
                 this.scene,
                 this.canvas
             );
-            console.log('✓ Player controller initialized');
+            this.updateLoadingProgress(70, '✓ 玩家控制已初始化');
 
             // 5. 初始化光照系統
+            this.updateLoadingProgress(75, '正在設置光照...');
             this.lightingSystem = new LightingSystem(this.scene);
-            console.log('✓ Lighting system initialized');
+            this.updateLoadingProgress(80, '✓ 光照系統已設置');
 
             // 6. 創建酒吧環境
+            this.updateLoadingProgress(85, '正在建構酒吧環境...');
             this.barEnvironment = new BarEnvironment(
                 this.scene,
                 this.physicsSystem,
@@ -146,22 +153,27 @@ class BarSimulator {
                 this.cocktailSystem
             );
             this.barEnvironment.createEnvironment();
-            console.log('✓ Bar environment created');
+            this.updateLoadingProgress(92, '✓ 酒吧環境已建構');
 
             // 7. 初始化 NPC 管理器
+            this.updateLoadingProgress(95, '正在初始化 NPC...');
             this.npcManager = new NPCManager(this.scene);
-            console.log('✓ NPC manager initialized');
+            this.updateLoadingProgress(97, '✓ NPC 已初始化');
 
             // 8. 設置 UI 控制
+            this.updateLoadingProgress(99, '正在設置 UI...');
             this.setupUIControls();
+            this.updateLoadingProgress(100, '✓ 載入完成！');
 
-            // 隱藏載入畫面
+            // 稍微延遲一下再隱藏載入畫面，讓用戶看到100%
+            await new Promise(resolve => setTimeout(resolve, 500));
             this.hideLoadingScreen();
 
             console.log('🎮 Bar Simulator initialized successfully!');
         } catch (error) {
             console.error('❌ Failed to initialize:', error);
-            alert('遊戲初始化失敗，請重新整理頁面');
+            this.updateLoadingProgress(0, '❌ 載入失敗，請重新整理頁面');
+            alert('遊戲初始化失敗，請重新整理頁面\n錯誤: ' + error);
         }
     }
 
@@ -355,6 +367,21 @@ class BarSimulator {
         if (loading) {
             loading.style.display = 'flex';
         }
+    }
+
+    /**
+     * 更新載入進度
+     */
+    private updateLoadingProgress(percentage: number, message: string): void {
+        const loadingText = document.getElementById('loading-text');
+        const loadingPercentage = document.getElementById('loading-percentage');
+        const loadingProgressBar = document.getElementById('loading-progress-bar');
+
+        if (loadingText) loadingText.textContent = message;
+        if (loadingPercentage) loadingPercentage.textContent = `${percentage}%`;
+        if (loadingProgressBar) loadingProgressBar.style.width = `${percentage}%`;
+
+        console.log(`[${percentage}%] ${message}`);
     }
 
     /**

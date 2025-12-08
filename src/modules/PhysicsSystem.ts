@@ -21,21 +21,39 @@ export default class PhysicsSystem {
      * 初始化物理引擎
      */
     async initialize(): Promise<void> {
+        // 添加超時機制 - 如果 Havok 載入超過 5 秒，就放棄並使用 Cannon.js
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Havok loading timeout')), 5000);
+        });
+
         try {
-            // 嘗試使用 Havok 物理引擎
-            const HavokPhysics = await import('@babylonjs/havok');
-            const { HavokPlugin } = await import('@babylonjs/core/Physics/v2/Plugins/havokPlugin');
+            console.log('正在嘗試載入 Havok 物理引擎...');
 
-            const havokInstance = await HavokPhysics.default();
-            const havokPlugin = new HavokPlugin(true, havokInstance);
+            // 使用 Promise.race 來實現超時
+            await Promise.race([
+                this.initializeHavok(),
+                timeoutPromise
+            ]);
 
-            this.scene.enablePhysics(this.gravity, havokPlugin);
             console.log('✓ Physics system initialized with Havok engine');
         } catch (error) {
-            console.warn('Havok not available, using Cannon.js fallback', error);
-            // 如果 Havok 不可用，使用 Cannon.js 作為後備
+            console.warn('Havok 載入失敗或超時，使用 Cannon.js 後備方案', error);
+            // 如果 Havok 不可用或超時，使用 Cannon.js 作為後備
             await this.initializeCannonFallback();
         }
+    }
+
+    /**
+     * 初始化 Havok 物理引擎
+     */
+    private async initializeHavok(): Promise<void> {
+        const HavokPhysics = await import('@babylonjs/havok');
+        const { HavokPlugin } = await import('@babylonjs/core/Physics/v2/Plugins/havokPlugin');
+
+        const havokInstance = await HavokPhysics.default();
+        const havokPlugin = new HavokPlugin(true, havokInstance);
+
+        this.scene.enablePhysics(this.gravity, havokPlugin);
     }
 
     /**
