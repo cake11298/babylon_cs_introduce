@@ -49,31 +49,29 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建地板和牆壁
+     * 創建地板和牆壁（高品質PBR材質）
      */
     private createFloorAndWalls(): void {
-        // 地板
+        // 地板 - 深色木質地板
         const floor = BABYLON.MeshBuilder.CreateGround(
             'floor',
             { width: 30, height: 30 },
             this.scene
         );
         const floorMaterial = new BABYLON.PBRMaterial('floorMat', this.scene);
-        floorMaterial.albedoColor = new BABYLON.Color3(0.35, 0.3, 0.25);
-        floorMaterial.metallic = 0.0; // 木地板不是金属
-        floorMaterial.roughness = 0.7;
-        floorMaterial.bumpTexture = null; // 可以添加法线贴图
-        floorMaterial.environmentIntensity = 1.2; // 增加环境反射
+        floorMaterial.albedoColor = new BABYLON.Color3(0.2, 0.15, 0.1); // 深色木質
+        floorMaterial.metallic = 0.0;
+        floorMaterial.roughness = 0.6;
+        floorMaterial.environmentIntensity = 0.8;
+        // 添加微弱的反射效果
+        floorMaterial.reflectivityColor = new BABYLON.Color3(0.15, 0.12, 0.1);
+        floorMaterial.microSurface = 0.7;
         floor.material = floorMaterial;
         floor.receiveShadows = true;
-
-        // 启用相机碰撞检测
         floor.checkCollisions = true;
-
-        // 添加地板物理碰撞
         this.physics.addStaticBoxCollider(floor);
 
-        // 後牆
+        // 後牆 - 深色磚牆質感
         const backWall = BABYLON.MeshBuilder.CreateBox(
             'backWall',
             { width: 30, height: 5, depth: 0.3 },
@@ -81,15 +79,15 @@ export default class BarEnvironment {
         );
         backWall.position = new BABYLON.Vector3(0, 2.5, -10);
         const wallMaterial = new BABYLON.PBRMaterial('wallMat', this.scene);
-        wallMaterial.albedoColor = new BABYLON.Color3(0.4, 0.35, 0.3);
-        wallMaterial.metallic = 0.05;
-        wallMaterial.roughness = 0.9;
+        wallMaterial.albedoColor = new BABYLON.Color3(0.25, 0.2, 0.18); // 深灰棕色
+        wallMaterial.metallic = 0.0;
+        wallMaterial.roughness = 0.95;
+        wallMaterial.environmentIntensity = 0.3;
+        // 添加細微的凹凸感
+        wallMaterial.microSurface = 0.6;
         backWall.material = wallMaterial;
         backWall.receiveShadows = true;
-
-        // 启用相机碰撞检测
         backWall.checkCollisions = true;
-
         this.physics.addStaticBoxCollider(backWall);
 
         // 左牆
@@ -121,13 +119,32 @@ export default class BarEnvironment {
         rightWall.checkCollisions = true;
 
         this.physics.addStaticBoxCollider(rightWall);
+
+        // 天花板
+        const ceiling = BABYLON.MeshBuilder.CreateBox(
+            'ceiling',
+            { width: 30, height: 0.3, depth: 30 },
+            this.scene
+        );
+        ceiling.position = new BABYLON.Vector3(0, 5, 0);
+        const ceilingMaterial = new BABYLON.PBRMaterial('ceilingMat', this.scene);
+        ceilingMaterial.albedoColor = new BABYLON.Color3(0.25, 0.22, 0.2);
+        ceilingMaterial.metallic = 0.0;
+        ceilingMaterial.roughness = 0.95;
+        ceiling.material = ceilingMaterial;
+        ceiling.receiveShadows = true;
+
+        // 启用相机碰撞检测
+        ceiling.checkCollisions = true;
+
+        this.physics.addStaticBoxCollider(ceiling);
     }
 
     /**
-     * 創建吧檯
+     * 創建吧檯（高品質木質材質）
      */
     private createBarCounter(): void {
-        // 吧檯檯面
+        // 吧檯檯面 - 拋光深色木材
         const counter = BABYLON.MeshBuilder.CreateBox(
             'barCounter',
             { width: 12, height: 0.15, depth: 2 },
@@ -136,21 +153,22 @@ export default class BarEnvironment {
         counter.position = new BABYLON.Vector3(0, 1.05, -3);
 
         const counterMaterial = new BABYLON.PBRMaterial('counterMat', this.scene);
-        counterMaterial.albedoColor = new BABYLON.Color3(0.25, 0.2, 0.15);
-        counterMaterial.metallic = 0.4; // 提高金属感
-        counterMaterial.roughness = 0.3; // 降低粗糙度，更光滑
-        counterMaterial.environmentIntensity = 1.5; // 增加环境反射
-        counterMaterial.reflectivityColor = new BABYLON.Color3(0.8, 0.8, 0.8);
+        counterMaterial.albedoColor = new BABYLON.Color3(0.18, 0.12, 0.08); // 深紅棕色
+        counterMaterial.metallic = 0.0; // 木材不是金屬
+        counterMaterial.roughness = 0.25; // 拋光效果
+        counterMaterial.environmentIntensity = 1.0;
+        // 添加木質光澤
+        counterMaterial.reflectivityColor = new BABYLON.Color3(0.3, 0.25, 0.2);
+        counterMaterial.microSurface = 0.85;
+        // 添加清漆層效果
+        counterMaterial.clearCoat.isEnabled = true;
+        counterMaterial.clearCoat.intensity = 0.5;
         counter.material = counterMaterial;
         counter.receiveShadows = true;
-
-        // 启用相机碰撞检测
         counter.checkCollisions = true;
-
-        // 添加檯面碰撞體
         this.physics.addStaticBoxCollider(counter);
 
-        // 吧檯底座
+        // 吧檯底座 - 深色木材
         const base = BABYLON.MeshBuilder.CreateBox(
             'barBase',
             { width: 12, height: 1, depth: 2 },
@@ -159,15 +177,13 @@ export default class BarEnvironment {
         base.position = new BABYLON.Vector3(0, 0.5, -3);
 
         const baseMaterial = new BABYLON.PBRMaterial('baseMat', this.scene);
-        baseMaterial.albedoColor = new BABYLON.Color3(0.15, 0.1, 0.05);
-        baseMaterial.metallic = 0.1;
-        baseMaterial.roughness = 0.7;
+        baseMaterial.albedoColor = new BABYLON.Color3(0.12, 0.08, 0.05);
+        baseMaterial.metallic = 0.0;
+        baseMaterial.roughness = 0.8;
+        baseMaterial.environmentIntensity = 0.5;
         base.material = baseMaterial;
         base.receiveShadows = true;
-
-        // 启用相机碰撞检测
         base.checkCollisions = true;
-
         this.physics.addStaticBoxCollider(base);
     }
 

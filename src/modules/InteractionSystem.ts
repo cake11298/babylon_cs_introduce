@@ -42,7 +42,8 @@ export default class InteractionSystem {
         // 創建手持物品的父節點（附加到相機）
         this.holdParent = new BABYLON.TransformNode('holdParent', scene);
         this.holdParent.parent = camera;
-        this.holdOffset = new BABYLON.Vector3(0.3, -0.3, -0.8);
+        // 調整為更合理的手持位置：右下前方
+        this.holdOffset = new BABYLON.Vector3(0.4, -0.5, 1.2);
 
         // 創建高亮圖層
         this.highlightLayer = new BABYLON.HighlightLayer('highlight', scene);
@@ -132,14 +133,25 @@ export default class InteractionSystem {
     private updateHeldObject(): void {
         if (!this.heldObject) return;
 
-        // 物品跟隨相機
+        // 計算物品在手中的位置
+        const forward = this.camera.getDirection(BABYLON.Axis.Z);
+        const right = this.camera.getDirection(BABYLON.Axis.X);
+        const up = this.camera.getDirection(BABYLON.Axis.Y);
+
+        // 物品位置 = 相機位置 + 偏移量
         this.heldObject.position = this.camera.position
-            .add(this.camera.getDirection(BABYLON.Axis.Z).scale(this.holdOffset.z))
-            .add(this.camera.getDirection(BABYLON.Axis.X).scale(this.holdOffset.x))
-            .add(BABYLON.Vector3.Up().scale(this.holdOffset.y));
+            .add(forward.scale(this.holdOffset.z))
+            .add(right.scale(this.holdOffset.x))
+            .add(up.scale(this.holdOffset.y));
 
         // 物品朝向與相機一致
         this.heldObject.rotationQuaternion = this.camera.absoluteRotation.clone();
+
+        // 輕微縮小物品以便觀看（可選）
+        if (!this.heldObject.metadata?.originalScaling) {
+            this.heldObject.metadata = this.heldObject.metadata || {};
+            this.heldObject.metadata.originalScaling = this.heldObject.scaling.clone();
+        }
     }
 
     /**
@@ -168,10 +180,15 @@ export default class InteractionSystem {
 
         const droppedObject = this.heldObject;
 
+        // 恢復原始縮放（如果有修改過）
+        if (droppedObject.metadata?.originalScaling) {
+            droppedObject.scaling = droppedObject.metadata.originalScaling;
+        }
+
         // 計算放下位置（相機前方稍遠處）
         const dropPosition = this.camera.position
-            .add(this.camera.getDirection(BABYLON.Axis.Z).scale(-1.5))
-            .add(BABYLON.Vector3.Up().scale(-0.5));
+            .add(this.camera.getDirection(BABYLON.Axis.Z).scale(1.5))
+            .add(this.camera.getDirection(BABYLON.Axis.Y).scale(-0.5));
 
         droppedObject.position = dropPosition;
 
@@ -179,7 +196,7 @@ export default class InteractionSystem {
         this.physics.setPhysicsEnabled(droppedObject, true);
 
         // 給予輕微向前的速度
-        const dropVelocity = this.camera.getDirection(BABYLON.Axis.Z).scale(-2);
+        const dropVelocity = this.camera.getDirection(BABYLON.Axis.Z).scale(2);
         this.physics.setVelocity(droppedObject, dropVelocity);
 
         this.heldObject = null;
@@ -196,6 +213,11 @@ export default class InteractionSystem {
 
         const returnedObject = this.heldObject;
         const originalPos = returnedObject.userData.originalPosition;
+
+        // 恢復原始縮放（如果有修改過）
+        if (returnedObject.metadata?.originalScaling) {
+            returnedObject.scaling = returnedObject.metadata.originalScaling;
+        }
 
         if (originalPos) {
             returnedObject.position = originalPos.clone();

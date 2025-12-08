@@ -23,19 +23,24 @@ export default class ModelLoader {
     }
 
     /**
-     * 加载FBX模型
+     * 加载FBX模型（带超时保护）
      */
     async loadFBXModel(config: ModelConfig): Promise<BABYLON.AbstractMesh> {
         try {
             console.log(`Loading FBX model: ${config.name} from ${config.modelPath}`);
 
-            // 使用SceneLoader加载FBX
-            const result = await BABYLON.SceneLoader.ImportMeshAsync(
-                '',
-                '',
-                config.modelPath,
-                this.scene
-            );
+            // 添加5秒超时保护，防止加載卡住
+            const result = await Promise.race([
+                BABYLON.SceneLoader.ImportMeshAsync(
+                    '',
+                    '',
+                    config.modelPath,
+                    this.scene
+                ),
+                new Promise<never>((_, reject) =>
+                    setTimeout(() => reject(new Error('Model loading timeout')), 5000)
+                )
+            ]);
 
             if (result.meshes.length === 0) {
                 throw new Error(`No meshes found in ${config.modelPath}`);
@@ -68,12 +73,19 @@ export default class ModelLoader {
                 this.applyTexture(result.meshes, config.texturePath);
             }
 
-            // 启用阴影
+            // 启用阴影和碰撞
             result.meshes.forEach(mesh => {
                 if (mesh instanceof BABYLON.Mesh) {
                     mesh.receiveShadows = true;
+                    // 禁用FBX模型子網格的碰撞檢測，避免ray casting問題
+                    mesh.isPickable = false;
                 }
             });
+
+            // 只讓根網格可選取
+            if (rootMesh instanceof BABYLON.Mesh) {
+                rootMesh.isPickable = true;
+            }
 
             // 保存加载的模型
             this.loadedModels.set(config.name, result.meshes);
@@ -83,6 +95,7 @@ export default class ModelLoader {
             return rootMesh;
         } catch (error) {
             console.error(`Failed to load FBX model ${config.name}:`, error);
+            console.warn(`Using fallback mesh for ${config.name}`);
             // 返回一个简单的替代网格
             return this.createFallbackMesh(config.name, config.position);
         }
