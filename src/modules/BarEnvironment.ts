@@ -220,39 +220,37 @@ export default class BarEnvironment {
             brandy: new BABYLON.Color3(0.55, 0.27, 0.07)
         };
 
-        // 在酒架上創建酒瓶（3層，每層2瓶）
-        const shelfHeights = [1.5, 2.5, 3.5];
-        let bottleIndex = 0;
+        // 在酒架上創建酒瓶（僅創建3個以提升性能）
+        const bottlePositions = [
+            new BABYLON.Vector3(-2, 2.0, -8),
+            new BABYLON.Vector3(0, 2.0, -8),
+            new BABYLON.Vector3(2, 2.0, -8)
+        ];
 
-        shelfHeights.forEach((shelfY) => {
-            for (let i = 0; i < 2; i++) {
-                const xPos = -2 + i * 4;
-                const liquorType = liquorTypes[bottleIndex % liquorTypes.length];
+        bottlePositions.forEach((position, index) => {
+            const liquorType = liquorTypes[index % liquorTypes.length];
 
-                const bottle = this.createBottle(
-                    `bottle_${bottleIndex}`,
-                    new BABYLON.Vector3(xPos, shelfY + 0.5, -8),
-                    liquorColors[liquorType]
-                );
+            const bottle = this.createBottle(
+                `bottle_${index}`,
+                position,
+                liquorColors[liquorType]
+            );
 
-                this.bottles.push(bottle);
+            this.bottles.push(bottle);
 
-                // 註冊為可互動物品
-                this.interaction.registerInteractable(
-                    bottle,
-                    ItemType.BOTTLE,
-                    liquorType
-                );
+            // 註冊為可互動物品
+            this.interaction.registerInteractable(
+                bottle,
+                ItemType.BOTTLE,
+                liquorType
+            );
 
-                // 添加物理
-                this.physics.addCylinderBody(bottle, {
-                    mass: 0.5,
-                    restitution: 0.3,
-                    friction: 0.6
-                });
-
-                bottleIndex++;
-            }
+            // 添加物理
+            this.physics.addCylinderBody(bottle, {
+                mass: 0.5,
+                restitution: 0.3,
+                friction: 0.6
+            });
         });
     }
 
@@ -310,11 +308,10 @@ export default class BarEnvironment {
      * 創建杯子
      */
     private createGlasses(): void {
-        // 在吧檯上創建3個杯子
+        // 在吧檯上創建2個杯子（減少以提升性能）
         const glassPositions = [
-            new BABYLON.Vector3(-3, 1.2, -3),
-            new BABYLON.Vector3(0, 1.2, -3),
-            new BABYLON.Vector3(3, 1.2, -3)
+            new BABYLON.Vector3(-2, 1.2, -3),
+            new BABYLON.Vector3(2, 1.2, -3)
         ];
 
         glassPositions.forEach((position, index) => {
@@ -434,11 +431,9 @@ export default class BarEnvironment {
      * 創建家具（桌椅）
      */
     private createFurniture(): void {
-        // 創建幾張簡單的桌子
+        // 創建1張簡單的桌子（減少以提升性能）
         const tablePositions = [
-            new BABYLON.Vector3(-6, 0, 2),
-            new BABYLON.Vector3(0, 0, 4),
-            new BABYLON.Vector3(6, 0, 2)
+            new BABYLON.Vector3(0, 0, 3)
         ];
 
         const tableMaterial = new BABYLON.PBRMaterial('tableMat', this.scene);
@@ -473,12 +468,10 @@ export default class BarEnvironment {
             tableLeg.castShadow = true;
         });
 
-        // 創建吧檯椅
+        // 創建吧檯椅（減少到2個以提升性能）
         const stoolPositions = [
-            new BABYLON.Vector3(-4, 0, -1),
             new BABYLON.Vector3(-2, 0, -1),
-            new BABYLON.Vector3(2, 0, -1),
-            new BABYLON.Vector3(4, 0, -1)
+            new BABYLON.Vector3(2, 0, -1)
         ];
 
         const stoolMaterial = new BABYLON.PBRMaterial('stoolMat', this.scene);

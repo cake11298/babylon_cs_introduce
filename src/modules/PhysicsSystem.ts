@@ -21,25 +21,15 @@ export default class PhysicsSystem {
      * 初始化物理引擎
      */
     async initialize(): Promise<void> {
-        // 添加超時機制 - 如果 Havok 載入超過 5 秒，就快速回退到 Cannon.js
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Havok loading timeout')), 5000);
-        });
-
+        // 直接使用 Cannon.js（輕量級，加載更快）
+        // 跳過 Havok 以提升加載速度
         try {
-            console.log('正在嘗試載入 Havok 物理引擎...');
-
-            // 使用 Promise.race 來實現超時
-            await Promise.race([
-                this.initializeHavok(),
-                timeoutPromise
-            ]);
-
-            console.log('✓ Physics system initialized with Havok engine');
-        } catch (error) {
-            console.warn('Havok 載入失敗或超時，使用 Cannon.js 後備方案', error);
-            // 如果 Havok 不可用或超時，使用 Cannon.js 作為後備
+            console.log('正在載入 Cannon.js 物理引擎（輕量級）...');
             await this.initializeCannonFallback();
+            console.log('✓ Physics system initialized with Cannon.js');
+        } catch (error) {
+            console.error('Failed to initialize Cannon.js physics engine:', error);
+            throw new Error('No physics engine available');
         }
     }
 
