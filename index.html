@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AAA-quality 3D Bar Simulator with cocktail-making mechanics using Babylon.js">
+    <title>Babylon.js 調酒模擬器 - Bar Simulator</title>
+  <script type="module" crossorigin src="/babylon_cs_introduce/assets/index-D2BzSFGQ.js"></script>
+  <link rel="modulepreload" crossorigin href="/babylon_cs_introduce/assets/babylon--_blpBQ1.js">
+  <link rel="stylesheet" crossorigin href="/babylon_cs_introduce/assets/index-DFsJCTeE.css">
+</head>
+<body>
+    <canvas id="renderCanvas"></canvas>
+
+    <!-- 載入畫面 -->
+    <div id="loading">
+        <div class="loading-content">
+            <h1>🍸 調酒模擬器</h1>
+            <div class="loading-spinner"></div>
+            <p id="loading-text">正在初始化...</p>
+            <div class="loading-progress">
+                <div class="progress-bar-container">
+                    <div id="loading-progress-bar" class="progress-bar-fill"></div>
+                </div>
+                <p id="loading-percentage">0%</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- HUD 資訊 -->
+    <div id="hud">
+        <div class="hud-item">
+            <span>FPS:</span> <span id="fps" class="stat">60</span>
+        </div>
+        <div class="controls-hint">
+            <div><strong>操作說明：</strong></div>
+            <div>WASD - 移動 | 滑鼠 - 視角</div>
+            <div>E - 拾取 | Q - 放下 | R - 放回原位</div>
+            <div>按住滑鼠左鍵 - 倒酒/搖酒</div>
+            <div>M - 開啟食譜</div>
+        </div>
+    </div>
+
+    <!-- 準心 -->
+    <div id="crosshair"></div>
+
+    <!-- 互動提示 -->
+    <div id="interaction-hint"></div>
+
+    <!-- 容器資訊面板 -->
+    <div id="container-info-panel">
+        <div id="container-info-content"></div>
+    </div>
+
+    <!-- 倒酒進度條 -->
+    <div id="pour-progress-panel">
+        <div class="progress-item">
+            <span>容器容量：</span>
+            <div class="progress-bar">
+                <div id="container-volume-bar" class="progress-fill"></div>
+            </div>
+            <span id="container-volume-text">0/0ml</span>
+        </div>
+        <div class="progress-item">
+            <span>倒入速度：</span>
+            <div class="progress-bar">
+                <div id="pour-rate-bar" class="progress-fill"></div>
+            </div>
+            <span id="pour-rate-text">0ml</span>
+        </div>
+    </div>
+
+    <!-- 食譜選單 -->
+    <div id="recipe-menu">
+        <div class="recipe-menu-content">
+            <button id="close-recipe-menu" class="close-btn">✕</button>
+            <h2>🍹 經典調酒配方</h2>
+            <div id="recipe-list"></div>
+        </div>
+    </div>
+
+    <!-- NPC 對話框 -->
+    <div id="npc-dialogue-panel">
+        <div class="npc-name" id="npc-name"></div>
+        <div class="npc-message" id="npc-message"></div>
+    </div>
+
+</body>
+</html>
