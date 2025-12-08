@@ -21,9 +21,9 @@ export default class PhysicsSystem {
      * 初始化物理引擎
      */
     async initialize(): Promise<void> {
-        // 添加超時機制 - 如果 Havok 載入超過 20 秒，就放棄並使用 Cannon.js
+        // 添加超時機制 - 如果 Havok 載入超過 5 秒，就快速回退到 Cannon.js
         const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Havok loading timeout')), 20000);
+            setTimeout(() => reject(new Error('Havok loading timeout')), 5000);
         });
 
         try {

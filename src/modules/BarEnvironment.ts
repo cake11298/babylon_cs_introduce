@@ -62,6 +62,9 @@ export default class BarEnvironment {
         floor.material = floorMaterial;
         floor.receiveShadows = true;
 
+        // 启用相机碰撞检测
+        floor.checkCollisions = true;
+
         // 添加地板物理碰撞
         this.physics.addStaticBoxCollider(floor);
 
@@ -79,6 +82,9 @@ export default class BarEnvironment {
         backWall.material = wallMaterial;
         backWall.receiveShadows = true;
 
+        // 启用相机碰撞检测
+        backWall.checkCollisions = true;
+
         this.physics.addStaticBoxCollider(backWall);
 
         // 左牆
@@ -91,6 +97,9 @@ export default class BarEnvironment {
         leftWall.material = wallMaterial;
         leftWall.receiveShadows = true;
 
+        // 启用相机碰撞检测
+        leftWall.checkCollisions = true;
+
         this.physics.addStaticBoxCollider(leftWall);
 
         // 右牆
@@ -102,6 +111,9 @@ export default class BarEnvironment {
         rightWall.position = new BABYLON.Vector3(15, 2.5, 0);
         rightWall.material = wallMaterial;
         rightWall.receiveShadows = true;
+
+        // 启用相机碰撞检测
+        rightWall.checkCollisions = true;
 
         this.physics.addStaticBoxCollider(rightWall);
     }
@@ -125,6 +137,9 @@ export default class BarEnvironment {
         counter.material = counterMaterial;
         counter.receiveShadows = true;
 
+        // 启用相机碰撞检测
+        counter.checkCollisions = true;
+
         // 添加檯面碰撞體
         this.physics.addStaticBoxCollider(counter);
 
@@ -142,6 +157,9 @@ export default class BarEnvironment {
         baseMaterial.roughness = 0.7;
         base.material = baseMaterial;
         base.receiveShadows = true;
+
+        // 启用相机碰撞检测
+        base.checkCollisions = true;
 
         this.physics.addStaticBoxCollider(base);
     }
@@ -165,6 +183,9 @@ export default class BarEnvironment {
             shelf.position = new BABYLON.Vector3(0, height, -8);
             shelf.material = shelfMaterial;
             shelf.receiveShadows = true;
+
+            // 启用相机碰撞检测
+            shelf.checkCollisions = true;
 
             // 添加架子碰撞體
             this.physics.addStaticBoxCollider(shelf);
@@ -435,6 +456,9 @@ export default class BarEnvironment {
             tableTop.position = new BABYLON.Vector3(position.x, 0.75, position.z);
             tableTop.material = tableMaterial;
             tableTop.receiveShadows = true;
+
+            // 启用相机碰撞检测
+            tableTop.checkCollisions = true;
 
             this.physics.addStaticBoxCollider(tableTop);
 

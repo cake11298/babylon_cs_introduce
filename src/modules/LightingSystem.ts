@@ -25,12 +25,12 @@ export default class LightingSystem {
             this.scene
         );
         mainLight.position = new BABYLON.Vector3(20, 40, 20);
-        mainLight.intensity = 1.5;
+        mainLight.intensity = 2.5; // 提高主光源強度以改善可見度
         mainLight.diffuse = new BABYLON.Color3(1.0, 0.95, 0.85);
         mainLight.specular = new BABYLON.Color3(1.0, 0.9, 0.7);
 
-        // === 級聯陰影映射（高品質陰影）===
-        this.shadowGenerator = new BABYLON.CascadedShadowGenerator(4096, mainLight);
+        // === 級聯陰影映射（優化品質以提升性能）===
+        this.shadowGenerator = new BABYLON.CascadedShadowGenerator(2048, mainLight);
         this.shadowGenerator.usePercentageCloserFiltering = true;
         this.shadowGenerator.filteringQuality = BABYLON.ShadowGenerator.QUALITY_HIGH;
         this.shadowGenerator.lambda = 0.95;
@@ -45,9 +45,9 @@ export default class LightingSystem {
             new BABYLON.Vector3(0, 1, 0),
             this.scene
         );
-        hemiLight.intensity = 0.8; // 提高環境光強度
-        hemiLight.diffuse = new BABYLON.Color3(0.9, 0.95, 1.0); // 更亮的環境光
-        hemiLight.groundColor = new BABYLON.Color3(0.5, 0.45, 0.4); // 更亮的地面反射
+        hemiLight.intensity = 1.5; // 大幅提高環境光強度以改善整體亮度
+        hemiLight.diffuse = new BABYLON.Color3(1.0, 1.0, 1.0); // 純白環境光
+        hemiLight.groundColor = new BABYLON.Color3(0.7, 0.7, 0.7); // 更亮的地面反射
         hemiLight.specular = new BABYLON.Color3(0.5, 0.5, 0.6);
 
         // === 補光：填充光 ===
@@ -56,8 +56,8 @@ export default class LightingSystem {
             new BABYLON.Vector3(1, -0.5, 1),
             this.scene
         );
-        fillLight.intensity = 0.3;
-        fillLight.diffuse = new BABYLON.Color3(0.6, 0.7, 0.9);
+        fillLight.intensity = 0.6; // 提高補光強度
+        fillLight.diffuse = new BABYLON.Color3(0.8, 0.85, 1.0);
 
         // === 聚光燈：酒吧氛圍 ===
         const spotLight1 = new BABYLON.SpotLight(
@@ -68,8 +68,8 @@ export default class LightingSystem {
             2,
             this.scene
         );
-        spotLight1.intensity = 0.8;
-        spotLight1.diffuse = new BABYLON.Color3(1.0, 0.9, 0.7);
+        spotLight1.intensity = 1.2; // 提高聚光燈強度
+        spotLight1.diffuse = new BABYLON.Color3(1.0, 0.95, 0.85);
 
         // === 點光源：裝飾性光源 ===
         const pointLight = new BABYLON.PointLight(
@@ -77,9 +77,9 @@ export default class LightingSystem {
             new BABYLON.Vector3(0, 3, 0),
             this.scene
         );
-        pointLight.intensity = 0.5;
-        pointLight.diffuse = new BABYLON.Color3(1.0, 0.8, 0.6);
-        pointLight.range = 10;
+        pointLight.intensity = 1.0; // 提高點光源強度
+        pointLight.diffuse = new BABYLON.Color3(1.0, 0.9, 0.7);
+        pointLight.range = 15; // 擴大照明範圍
     }
 
     /**
@@ -105,7 +105,9 @@ export default class LightingSystem {
         pipeline.bloomKernel = 64;
         pipeline.bloomScale = 0.7;
 
-        // === SSAO2（環境光遮蔽）- 減弱以避免過暗 ===
+        // === SSAO2（環境光遮蔽）- 禁用以提升加載性能和畫面亮度 ===
+        // 注释掉SSAO以加快加载并提升亮度
+        /*
         const ssao = new BABYLON.SSAO2RenderingPipeline(
             'ssao',
             this.scene,
@@ -115,7 +117,7 @@ export default class LightingSystem {
             }
         );
         ssao.radius = 1.5;
-        ssao.totalStrength = 0.8; // 降低強度，避免過暗
+        ssao.totalStrength = 0.3;
         ssao.expensiveBlur = true;
         ssao.samples = 16;
         ssao.maxZ = 100;
@@ -124,18 +126,19 @@ export default class LightingSystem {
             'ssao',
             camera
         );
+        */
 
         // === 圖像處理（色調映射、色彩分級）===
         pipeline.imageProcessingEnabled = true;
         pipeline.imageProcessing.toneMappingEnabled = true;
         pipeline.imageProcessing.toneMappingType =
             BABYLON.ImageProcessingConfiguration.TONEMAPPING_ACES;
-        pipeline.imageProcessing.exposure = 1.6; // 提高曝光度，讓畫面更亮
-        pipeline.imageProcessing.contrast = 1.1;
+        pipeline.imageProcessing.exposure = 2.2; // 大幅提高曝光度，讓畫面明亮
+        pipeline.imageProcessing.contrast = 1.05; // 稍微降低對比度，避免過暗
 
-        // === 暈影效果 - 減弱以避免邊緣過暗 ===
+        // === 暈影效果 - 大幅減弱以避免邊緣過暗 ===
         pipeline.imageProcessing.vignetteEnabled = true;
-        pipeline.imageProcessing.vignetteWeight = 0.8; // 降低暈影強度
+        pipeline.imageProcessing.vignetteWeight = 0.3; // 大幅降低暈影強度
         pipeline.imageProcessing.vignetteStretch = 0.3;
         pipeline.imageProcessing.vignetteColor = new BABYLON.Color4(0, 0, 0, 0);
 
@@ -152,19 +155,15 @@ export default class LightingSystem {
         pipeline.chromaticAberrationEnabled = true;
         pipeline.chromaticAberration.aberrationAmount = 15;
 
-        // === 膠片顆粒 ===
-        pipeline.grainEnabled = true;
-        pipeline.grain.intensity = 8;
-        pipeline.grain.animated = true;
+        // === 膠片顆粒 - 禁用以提升性能 ===
+        pipeline.grainEnabled = false;
 
-        // === 銳化 ===
-        pipeline.sharpenEnabled = true;
-        pipeline.sharpen.edgeAmount = 0.4;
-        pipeline.sharpen.colorAmount = 0.3;
+        // === 銳化 - 禁用以提升性能 ===
+        pipeline.sharpenEnabled = false;
 
-        // === 抗鋸齒（FXAA）===
+        // === 抗鋸齒（FXAA）- 降低采样以提升性能 ===
         pipeline.fxaaEnabled = true;
-        pipeline.samples = 4;
+        pipeline.samples = 2;
 
         // === 輝光層（用於發光物體）===
         const glowLayer = new BABYLON.GlowLayer('glow', this.scene, {
@@ -173,10 +172,10 @@ export default class LightingSystem {
         });
         glowLayer.intensity = 0.7;
 
-        // === 霧效果 - 減弱以避免畫面灰暗 ===
+        // === 霧效果 - 幾乎完全移除以避免畫面灰暗 ===
         this.scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
-        this.scene.fogDensity = 0.001; // 降低霧的密度
-        this.scene.fogColor = new BABYLON.Color3(0.8, 0.85, 0.95); // 更亮的霧色
+        this.scene.fogDensity = 0.0001; // 大幅降低霧的密度
+        this.scene.fogColor = new BABYLON.Color3(0.9, 0.95, 1.0); // 更亮的霧色
     }
 
     /**

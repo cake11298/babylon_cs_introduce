@@ -76,8 +76,8 @@ class BarSimulator {
     private createScene(): BABYLON.Scene {
         const scene = new BABYLON.Scene(this.engine);
 
-        // 場景背景色
-        scene.clearColor = new BABYLON.Color4(0.1, 0.1, 0.15, 1.0);
+        // 場景背景色 - 提亮以改善整體可見度
+        scene.clearColor = new BABYLON.Color4(0.25, 0.25, 0.3, 1.0);
 
         // 啟用碰撞
         scene.collisionsEnabled = true;
@@ -164,6 +164,9 @@ class BarSimulator {
             this.updateLoadingProgress(99, '正在設置 UI...');
             this.setupUIControls();
             this.updateLoadingProgress(100, '✓ 載入完成！');
+
+            // 添加測試球體以驗證渲染（用於調試黑屏問題）
+            this.addDebugTestSphere();
 
             // 稍微延遲一下再隱藏載入畫面，讓用戶看到100%
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -392,6 +395,31 @@ class BarSimulator {
         if (loading) {
             loading.style.display = 'none';
         }
+    }
+
+    /**
+     * 添加調試測試球體（用於驗證渲染是否正常）
+     */
+    private addDebugTestSphere(): void {
+        // 創建一個明亮的測試球體
+        const testSphere = BABYLON.MeshBuilder.CreateSphere(
+            'debugTestSphere',
+            { diameter: 1 },
+            this.scene
+        );
+
+        // 將球體放置在相機前方
+        testSphere.position = new BABYLON.Vector3(0, 1.7, -3);
+
+        // 使用自發光材質，確保在任何光照條件下都可見
+        const testMat = new BABYLON.StandardMaterial('debugTestMat', this.scene);
+        testMat.emissiveColor = new BABYLON.Color3(1, 0, 0); // 紅色自發光
+        testMat.diffuseColor = new BABYLON.Color3(1, 0.5, 0.5); // 淺紅色漫反射
+        testSphere.material = testMat;
+
+        console.log('🔴 調試測試球體已添加（紅色球體應該在相機前方可見）');
+        console.log('   位置:', testSphere.position);
+        console.log('   如果能看到紅色球體，說明渲染正常；看不到則可能是其他初始化問題');
     }
 }
 
