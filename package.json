@@ -1,7 +1,7 @@
 {
-  "name": "babylon-voxel-demo",
-  "version": "1.0.0",
-  "description": "High-performance Voxel/Minecraft-style demo using Babylon.js",
+  "name": "babylon-bar-simulator",
+  "version": "2.0.0",
+  "description": "AAA-quality 3D Bar Simulator with cocktail-making mechanics using Babylon.js",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,20 +11,25 @@
   },
   "keywords": [
     "babylonjs",
-    "voxel",
-    "minecraft",
+    "bar-simulator",
+    "cocktail",
     "3d",
-    "webgl"
+    "webgl",
+    "game",
+    "pbr"
   ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "gh-pages": "^6.1.1",
+    "typescript": "^5.3.3",
     "vite": "^5.0.0"
   },
   "dependencies": {
     "@babylonjs/core": "^8.39.2",
     "@babylonjs/loaders": "^8.39.2",
-    "@babylonjs/materials": "^8.39.2"
+    "@babylonjs/materials": "^8.39.2",
+    "@babylonjs/gui": "^8.39.2",
+    "@babylonjs/inspector": "^8.39.2"
   }
 }
