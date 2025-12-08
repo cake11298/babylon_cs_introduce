@@ -461,8 +461,9 @@ class Chunk {
             vertexData.applyToMesh(this.mesh);
             this.mesh.material = this.materials.terrain;
 
-            // Enable collision
+            // Enable collision and shadows
             this.mesh.checkCollisions = true;
+            this.mesh.receiveShadows = true;
         }
 
         // Create water mesh
@@ -476,6 +477,7 @@ class Chunk {
             this.waterMesh = new BABYLON.Mesh(`water_${this.chunkX}_${this.chunkZ}`, this.scene);
             waterVertexData.applyToMesh(this.waterMesh);
             this.waterMesh.material = this.materials.water;
+            this.waterMesh.receiveShadows = true;
         }
     }
 
@@ -510,11 +512,12 @@ class BridgeBuilder {
         const bridgeZ = 32;
         const bridgeY = CONFIG.WATER_LEVEL + 1;
 
-        // Bridge deck material
+        // Enhanced bridge deck material with PBR
         const woodMat = new BABYLON.PBRMaterial("bridgeWood", this.scene);
         woodMat.albedoColor = new BABYLON.Color3(0.4, 0.25, 0.1);
         woodMat.metallic = 0;
-        woodMat.roughness = 0.8;
+        woodMat.roughness = 0.85;
+        woodMat.enableSpecularAntiAliasing = true;
 
         // Create bridge deck
         const deck = BABYLON.MeshBuilder.CreateBox("bridgeDeck", {
@@ -525,6 +528,7 @@ class BridgeBuilder {
         deck.position = new BABYLON.Vector3(bridgeX, bridgeY, bridgeZ);
         deck.material = woodMat;
         deck.checkCollisions = true;
+        deck.receiveShadows = true;
 
         // Bridge supports (pillars)
         for (let i = -1; i <= 1; i++) {
@@ -534,6 +538,7 @@ class BridgeBuilder {
             }, this.scene);
             pillar.position = new BABYLON.Vector3(bridgeX + i * 1.2, bridgeY - 2, bridgeZ - 4);
             pillar.material = woodMat;
+            pillar.receiveShadows = true;
 
             const pillar2 = BABYLON.MeshBuilder.CreateCylinder("pillar2", {
                 diameter: 0.4,
@@ -541,6 +546,7 @@ class BridgeBuilder {
             }, this.scene);
             pillar2.position = new BABYLON.Vector3(bridgeX + i * 1.2, bridgeY - 2, bridgeZ + 4);
             pillar2.material = woodMat;
+            pillar2.receiveShadows = true;
         }
 
         // Bridge railings
@@ -552,6 +558,7 @@ class BridgeBuilder {
             }, this.scene);
             railing.position = new BABYLON.Vector3(bridgeX + side, bridgeY + 0.75, bridgeZ);
             railing.material = woodMat;
+            railing.receiveShadows = true;
         }
     }
 }
@@ -572,16 +579,18 @@ class HouseBuilder {
         const houseZ = 15;
         const houseY = 10;
 
-        // Materials
+        // Enhanced materials with better PBR
         const wallMat = new BABYLON.PBRMaterial("wallMat", this.scene);
         wallMat.albedoColor = new BABYLON.Color3(0.9, 0.85, 0.7);
         wallMat.metallic = 0;
         wallMat.roughness = 0.7;
+        wallMat.enableSpecularAntiAliasing = true;
 
         const roofMat = new BABYLON.PBRMaterial("roofMat", this.scene);
         roofMat.albedoColor = new BABYLON.Color3(0.6, 0.2, 0.1);
         roofMat.metallic = 0;
         roofMat.roughness = 0.9;
+        roofMat.enableSpecularAntiAliasing = true;
 
         const doorMat = new BABYLON.PBRMaterial("doorMat", this.scene);
         doorMat.albedoColor = new BABYLON.Color3(0.3, 0.2, 0.1);
@@ -597,6 +606,7 @@ class HouseBuilder {
         walls.position = new BABYLON.Vector3(houseX, houseY + 2, houseZ);
         walls.material = wallMat;
         walls.checkCollisions = true;
+        walls.receiveShadows = true;
 
         // Roof (pyramid)
         const roof = BABYLON.MeshBuilder.CreateCylinder("roof", {
@@ -608,6 +618,7 @@ class HouseBuilder {
         roof.position = new BABYLON.Vector3(houseX, houseY + 5.5, houseZ);
         roof.rotation.y = Math.PI / 4;
         roof.material = roofMat;
+        roof.receiveShadows = true;
 
         // Door
         const door = BABYLON.MeshBuilder.CreateBox("door", {
@@ -617,12 +628,15 @@ class HouseBuilder {
         }, this.scene);
         door.position = new BABYLON.Vector3(houseX, houseY + 1.25, houseZ - 3);
         door.material = doorMat;
+        door.receiveShadows = true;
 
-        // Windows
+        // Windows with emissive glow
         const windowMat = new BABYLON.PBRMaterial("windowMat", this.scene);
         windowMat.albedoColor = new BABYLON.Color3(0.3, 0.5, 0.7);
-        windowMat.metallic = 0.5;
-        windowMat.roughness = 0.1;
+        windowMat.metallic = 0.7;
+        windowMat.roughness = 0.05;
+        windowMat.emissiveColor = new BABYLON.Color3(0.8, 0.6, 0.3);
+        windowMat.emissiveIntensity = 0.5;
 
         const window1 = BABYLON.MeshBuilder.CreateBox("window1", {
             width: 1.2,
@@ -631,6 +645,7 @@ class HouseBuilder {
         }, this.scene);
         window1.position = new BABYLON.Vector3(houseX - 2, houseY + 2.5, houseZ - 3);
         window1.material = windowMat;
+        window1.receiveShadows = true;
 
         const window2 = BABYLON.MeshBuilder.CreateBox("window2", {
             width: 1.2,
@@ -639,8 +654,9 @@ class HouseBuilder {
         }, this.scene);
         window2.position = new BABYLON.Vector3(houseX + 2, houseY + 2.5, houseZ - 3);
         window2.material = windowMat;
+        window2.receiveShadows = true;
 
-        // Chimney
+        // Chimney with smoke particles
         const chimney = BABYLON.MeshBuilder.CreateBox("chimney", {
             width: 0.8,
             height: 2,
@@ -648,6 +664,51 @@ class HouseBuilder {
         }, this.scene);
         chimney.position = new BABYLON.Vector3(houseX + 2, houseY + 5, houseZ + 2);
         chimney.material = wallMat;
+        chimney.receiveShadows = true;
+
+        // Add smoke particle system
+        this.createSmokeEffect(new BABYLON.Vector3(houseX + 2, houseY + 6.2, houseZ + 2));
+    }
+
+    createSmokeEffect(position) {
+        const smokeSystem = new BABYLON.ParticleSystem("smoke", 100, this.scene);
+
+        // Create smoke texture
+        const smokeTexture = new BABYLON.DynamicTexture("smokeTex", 64, this.scene);
+        const ctx = smokeTexture.getContext();
+        const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gradient.addColorStop(0, 'rgba(100, 100, 100, 0.8)');
+        gradient.addColorStop(0.5, 'rgba(80, 80, 80, 0.4)');
+        gradient.addColorStop(1, 'rgba(60, 60, 60, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 64, 64);
+        smokeTexture.update();
+
+        smokeSystem.particleTexture = smokeTexture;
+        smokeSystem.emitter = position;
+        smokeSystem.minEmitBox = new BABYLON.Vector3(-0.2, 0, -0.2);
+        smokeSystem.maxEmitBox = new BABYLON.Vector3(0.2, 0, 0.2);
+
+        smokeSystem.color1 = new BABYLON.Color4(0.4, 0.4, 0.4, 0.6);
+        smokeSystem.color2 = new BABYLON.Color4(0.3, 0.3, 0.3, 0.4);
+        smokeSystem.colorDead = new BABYLON.Color4(0.2, 0.2, 0.2, 0);
+
+        smokeSystem.minSize = 0.3;
+        smokeSystem.maxSize = 1.5;
+        smokeSystem.minLifeTime = 2;
+        smokeSystem.maxLifeTime = 4;
+        smokeSystem.emitRate = 20;
+
+        smokeSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+        smokeSystem.gravity = new BABYLON.Vector3(0, 1, 0);
+        smokeSystem.direction1 = new BABYLON.Vector3(-0.2, 1, -0.2);
+        smokeSystem.direction2 = new BABYLON.Vector3(0.2, 1.5, 0.2);
+
+        smokeSystem.minEmitPower = 0.5;
+        smokeSystem.maxEmitPower = 1;
+        smokeSystem.updateSpeed = 0.01;
+
+        smokeSystem.start();
     }
 }
 
@@ -825,7 +886,7 @@ class VoxelDemo {
 
     createScene() {
         const scene = new BABYLON.Scene(this.engine);
-        scene.clearColor = new BABYLON.Color3(0.5, 0.7, 1.0);
+        scene.clearColor = new BABYLON.Color3(0.1, 0.2, 0.3);
         scene.collisionsEnabled = true;
         scene.gravity = new BABYLON.Vector3(0, -0.5, 0);
 
@@ -857,22 +918,41 @@ class VoxelDemo {
             }
         });
 
-        // Lighting - Enhanced for PBR
-        const hemiLight = new BABYLON.HemisphericLight("hemiLight",
-            new BABYLON.Vector3(0, 1, 0), scene);
-        hemiLight.intensity = 0.5;
-        hemiLight.groundColor = new BABYLON.Color3(0.3, 0.3, 0.5);
+        // ===== AAA QUALITY SKYBOX =====
+        this.createSkybox(scene);
 
+        // ===== ENHANCED LIGHTING SYSTEM =====
+        // Main sun light with warm color
         const sunLight = new BABYLON.DirectionalLight("sunLight",
             new BABYLON.Vector3(-1, -2, -1), scene);
-        sunLight.position = new BABYLON.Vector3(50, 80, 50);
-        sunLight.intensity = 1.2;
-        sunLight.diffuse = new BABYLON.Color3(1, 0.95, 0.8);
+        sunLight.position = new BABYLON.Vector3(50, 100, 50);
+        sunLight.intensity = 2.5;
+        sunLight.diffuse = new BABYLON.Color3(1.0, 0.95, 0.85);
+        sunLight.specular = new BABYLON.Color3(1.0, 0.9, 0.7);
 
-        // Shadow generator
-        this.shadowGenerator = new BABYLON.ShadowGenerator(2048, sunLight);
-        this.shadowGenerator.useBlurExponentialShadowMap = true;
-        this.shadowGenerator.blurScale = 2;
+        // Ambient hemisphere light for indirect lighting
+        const hemiLight = new BABYLON.HemisphericLight("hemiLight",
+            new BABYLON.Vector3(0, 1, 0), scene);
+        hemiLight.intensity = 0.6;
+        hemiLight.diffuse = new BABYLON.Color3(0.7, 0.8, 1.0);
+        hemiLight.groundColor = new BABYLON.Color3(0.3, 0.25, 0.2);
+        hemiLight.specular = new BABYLON.Color3(0.3, 0.3, 0.4);
+
+        // Fill light (opposite direction from sun)
+        const fillLight = new BABYLON.DirectionalLight("fillLight",
+            new BABYLON.Vector3(1, -0.5, 1), scene);
+        fillLight.intensity = 0.3;
+        fillLight.diffuse = new BABYLON.Color3(0.6, 0.7, 0.9);
+
+        // ===== CASCADED SHADOW MAPPING =====
+        this.shadowGenerator = new BABYLON.CascadedShadowGenerator(4096, sunLight);
+        this.shadowGenerator.usePercentageCloserFiltering = true;
+        this.shadowGenerator.filteringQuality = BABYLON.ShadowGenerator.QUALITY_HIGH;
+        this.shadowGenerator.lambda = 0.95;
+        this.shadowGenerator.cascadeBlendPercentage = 0.1;
+        this.shadowGenerator.depthClamp = true;
+        this.shadowGenerator.stabilizeCascades = true;
+        this.shadowGenerator.bias = 0.001;
 
         // Create materials
         this.createMaterials(scene);
@@ -894,18 +974,246 @@ class VoxelDemo {
         this.shadowGenerator.addShadowCaster(this.treeGenerator.trunkTemplate);
         this.shadowGenerator.addShadowCaster(this.treeGenerator.leavesTemplate);
 
-        // Enable fog for atmosphere
-        scene.fogMode = BABYLON.Scene.FOGMODE_EXP;
-        scene.fogDensity = 0.008;
-        scene.fogColor = new BABYLON.Color3(0.5, 0.7, 1.0);
+        // ===== ADVANCED FOG FOR ATMOSPHERE =====
+        scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
+        scene.fogDensity = 0.005;
+        scene.fogColor = new BABYLON.Color3(0.6, 0.75, 0.95);
+
+        // ===== POST-PROCESSING PIPELINE (AAA QUALITY) =====
+        this.createPostProcessing(scene);
+
+        // ===== PARTICLE EFFECTS =====
+        this.createParticleEffects(scene);
 
         return scene;
+    }
+
+    // ===== CREATE SKYBOX WITH PROCEDURAL GRADIENT =====
+    createSkybox(scene) {
+        const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 1000.0 }, scene);
+        const skyboxMaterial = new BABYLON.StandardMaterial("skyBoxMat", scene);
+        skyboxMaterial.backFaceCulling = false;
+        skyboxMaterial.disableLighting = true;
+        skybox.material = skyboxMaterial;
+        skybox.infiniteDistance = true;
+
+        // Create procedural sky texture
+        const skyTexture = new BABYLON.DynamicTexture("skyTexture", 512, scene, true);
+        const ctx = skyTexture.getContext();
+        const imageData = ctx.createImageData(512, 512);
+
+        // Generate beautiful sky gradient
+        for (let y = 0; y < 512; y++) {
+            for (let x = 0; x < 512; x++) {
+                const idx = (y * 512 + x) * 4;
+                const t = y / 512;
+
+                // Sky gradient from horizon to zenith
+                const horizonColor = { r: 0.8, g: 0.85, b: 1.0 };
+                const zenithColor = { r: 0.2, g: 0.5, b: 0.9 };
+
+                const r = horizonColor.r * (1 - t) + zenithColor.r * t;
+                const g = horizonColor.g * (1 - t) + zenithColor.g * t;
+                const b = horizonColor.b * (1 - t) + zenithColor.b * t;
+
+                // Add some noise for clouds
+                const noise = this.noise.octaveNoise2D(x * 0.01, y * 0.01, 3, 0.5);
+                const cloudFactor = Math.max(0, noise * 0.3);
+
+                imageData.data[idx] = Math.floor((r + cloudFactor) * 255);
+                imageData.data[idx + 1] = Math.floor((g + cloudFactor) * 255);
+                imageData.data[idx + 2] = Math.floor((b + cloudFactor) * 255);
+                imageData.data[idx + 3] = 255;
+            }
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+        skyTexture.update();
+
+        skyboxMaterial.reflectionTexture = skyTexture;
+        skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+
+        // Add glow to horizon
+        skyboxMaterial.emissiveColor = new BABYLON.Color3(0.1, 0.15, 0.2);
+
+        return skybox;
+    }
+
+    // ===== AAA POST-PROCESSING PIPELINE =====
+    createPostProcessing(scene) {
+        // Create default rendering pipeline with all AAA effects
+        const pipeline = new BABYLON.DefaultRenderingPipeline(
+            "defaultPipeline",
+            true,
+            scene,
+            [this.camera]
+        );
+
+        // ===== BLOOM (God rays / glow effect) =====
+        pipeline.bloomEnabled = true;
+        pipeline.bloomThreshold = 0.6;
+        pipeline.bloomWeight = 0.4;
+        pipeline.bloomKernel = 64;
+        pipeline.bloomScale = 0.7;
+
+        // ===== AMBIENT OCCLUSION (SSAO) =====
+        pipeline.depthOfFieldEnabled = false; // Disable DOF for better performance
+
+        // Use SSAO2 for better quality
+        const ssao = new BABYLON.SSAO2RenderingPipeline("ssao", scene, {
+            ssaoRatio: 0.5,
+            blurRatio: 1
+        });
+        ssao.radius = 1.5;
+        ssao.totalStrength = 1.3;
+        ssao.expensiveBlur = true;
+        ssao.samples = 16;
+        ssao.maxZ = 100;
+
+        scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("ssao", this.camera);
+
+        // ===== COLOR GRADING / TONEMAP =====
+        pipeline.imageProcessingEnabled = true;
+        pipeline.imageProcessing.toneMappingEnabled = true;
+        pipeline.imageProcessing.toneMappingType = BABYLON.ImageProcessingConfiguration.TONEMAPPING_ACES;
+        pipeline.imageProcessing.exposure = 1.2;
+        pipeline.imageProcessing.contrast = 1.15;
+        pipeline.imageProcessing.vignetteEnabled = true;
+        pipeline.imageProcessing.vignetteWeight = 1.5;
+        pipeline.imageProcessing.vignetteStretch = 0.5;
+        pipeline.imageProcessing.vignetteColor = new BABYLON.Color4(0, 0, 0, 0);
+
+        // Color curves for cinematic look
+        pipeline.imageProcessing.colorCurvesEnabled = true;
+        const curve = new BABYLON.ColorCurves();
+        curve.globalHue = 20;
+        curve.globalSaturation = 15;
+        curve.highlightsSaturation = 10;
+        curve.shadowsSaturation = -10;
+        pipeline.imageProcessing.colorCurves = curve;
+
+        // ===== CHROMATIC ABERRATION =====
+        pipeline.chromaticAberrationEnabled = true;
+        pipeline.chromaticAberration.aberrationAmount = 15;
+
+        // ===== GRAIN (Film grain for cinematic look) =====
+        pipeline.grainEnabled = true;
+        pipeline.grain.intensity = 8;
+        pipeline.grain.animated = true;
+
+        // ===== SHARPENING =====
+        pipeline.sharpenEnabled = true;
+        pipeline.sharpen.edgeAmount = 0.4;
+        pipeline.sharpen.colorAmount = 0.3;
+
+        // ===== ANTI-ALIASING (FXAA) =====
+        pipeline.fxaaEnabled = true;
+        pipeline.samples = 4;
+
+        // ===== GLOW LAYER for emissive objects =====
+        const gl = new BABYLON.GlowLayer("glow", scene, {
+            mainTextureFixedSize: 512,
+            blurKernelSize: 64
+        });
+        gl.intensity = 0.7;
+
+        this.glowLayer = gl;
+        this.pipeline = pipeline;
+
+        return pipeline;
+    }
+
+    // ===== PARTICLE EFFECTS =====
+    createParticleEffects(scene) {
+        // Fireflies / magical particles
+        const particleSystem = new BABYLON.ParticleSystem("fireflies", 300, scene);
+
+        // Create particle texture (procedural)
+        const particleTexture = new BABYLON.DynamicTexture("particleTex", 64, scene);
+        const pCtx = particleTexture.getContext();
+        const gradient = pCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gradient.addColorStop(0, 'rgba(255, 230, 150, 1)');
+        gradient.addColorStop(0.4, 'rgba(255, 200, 100, 0.8)');
+        gradient.addColorStop(1, 'rgba(255, 180, 80, 0)');
+        pCtx.fillStyle = gradient;
+        pCtx.fillRect(0, 0, 64, 64);
+        particleTexture.update();
+
+        particleSystem.particleTexture = particleTexture;
+
+        // Emission area
+        particleSystem.emitter = new BABYLON.Vector3(32, 8, 32);
+        particleSystem.minEmitBox = new BABYLON.Vector3(-40, 0, -40);
+        particleSystem.maxEmitBox = new BABYLON.Vector3(40, 15, 40);
+
+        // Particle behavior
+        particleSystem.color1 = new BABYLON.Color4(1, 0.9, 0.6, 1);
+        particleSystem.color2 = new BABYLON.Color4(1, 0.8, 0.4, 1);
+        particleSystem.colorDead = new BABYLON.Color4(1, 0.7, 0.3, 0);
+
+        particleSystem.minSize = 0.1;
+        particleSystem.maxSize = 0.3;
+
+        particleSystem.minLifeTime = 3;
+        particleSystem.maxLifeTime = 8;
+
+        particleSystem.emitRate = 30;
+
+        particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+
+        particleSystem.gravity = new BABYLON.Vector3(0, 0.2, 0);
+
+        particleSystem.direction1 = new BABYLON.Vector3(-0.5, 0.5, -0.5);
+        particleSystem.direction2 = new BABYLON.Vector3(0.5, 1, 0.5);
+
+        particleSystem.minAngularSpeed = 0;
+        particleSystem.maxAngularSpeed = Math.PI;
+
+        particleSystem.minEmitPower = 0.2;
+        particleSystem.maxEmitPower = 0.5;
+        particleSystem.updateSpeed = 0.01;
+
+        particleSystem.start();
+
+        // Dust particles
+        const dustSystem = new BABYLON.ParticleSystem("dust", 200, scene);
+        dustSystem.particleTexture = particleTexture;
+
+        dustSystem.emitter = new BABYLON.Vector3(32, 10, 32);
+        dustSystem.minEmitBox = new BABYLON.Vector3(-50, 0, -50);
+        dustSystem.maxEmitBox = new BABYLON.Vector3(50, 5, 50);
+
+        dustSystem.color1 = new BABYLON.Color4(0.9, 0.9, 0.9, 0.3);
+        dustSystem.color2 = new BABYLON.Color4(0.8, 0.8, 0.8, 0.2);
+        dustSystem.colorDead = new BABYLON.Color4(0.7, 0.7, 0.7, 0);
+
+        dustSystem.minSize = 0.05;
+        dustSystem.maxSize = 0.15;
+
+        dustSystem.minLifeTime = 5;
+        dustSystem.maxLifeTime = 15;
+
+        dustSystem.emitRate = 20;
+
+        dustSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+
+        dustSystem.gravity = new BABYLON.Vector3(0, 0, 0);
+        dustSystem.direction1 = new BABYLON.Vector3(-0.3, 0.1, -0.3);
+        dustSystem.direction2 = new BABYLON.Vector3(0.3, 0.3, 0.3);
+
+        dustSystem.minEmitPower = 0.1;
+        dustSystem.maxEmitPower = 0.3;
+        dustSystem.updateSpeed = 0.005;
+
+        dustSystem.start();
+
+        this.particleSystems = [particleSystem, dustSystem];
     }
 
     createMaterials(scene) {
         this.materials = {};
 
-        // Create high-quality PBR terrain material
+        // ===== ENHANCED PBR TERRAIN MATERIAL =====
         this.materials.terrain = new BABYLON.PBRMaterial("terrainPBR", scene);
 
         // Create procedural textures
@@ -914,27 +1222,43 @@ class VoxelDemo {
 
         grassTexture.uScale = 4;
         grassTexture.vScale = 4;
+        normalMap.level = 1.2; // Enhance normal mapping strength
 
         this.materials.terrain.albedoTexture = grassTexture;
         this.materials.terrain.bumpTexture = normalMap;
         this.materials.terrain.metallic = 0;
-        this.materials.terrain.roughness = 0.95;
+        this.materials.terrain.roughness = 0.9;
         this.materials.terrain.useVertexColors = true;
 
-        // Create realistic water material using WaterMaterial
-        this.materials.water = new WaterMaterial("water", scene, new BABYLON.Vector2(512, 512));
+        // Enhanced PBR properties for realistic terrain
+        this.materials.terrain.enableSpecularAntiAliasing = true;
+        this.materials.terrain.useRadianceOverAlpha = true;
+        this.materials.terrain.useSpecularOverAlpha = true;
+        this.materials.terrain.directIntensity = 1.0;
+        this.materials.terrain.environmentIntensity = 0.5;
+        this.materials.terrain.specularIntensity = 0.2;
+
+        // Subsurface scattering for more realistic look
+        this.materials.terrain.subSurface.isTranslucencyEnabled = true;
+        this.materials.terrain.subSurface.translucencyIntensity = 0.1;
+        this.materials.terrain.subSurface.tintColor = new BABYLON.Color3(0.3, 0.6, 0.2);
+
+        // ===== ENHANCED WATER MATERIAL =====
+        this.materials.water = new WaterMaterial("water", scene, new BABYLON.Vector2(1024, 1024));
         this.materials.water.backFaceCulling = true;
         this.materials.water.bumpTexture = normalMap;
-        this.materials.water.windForce = -5;
-        this.materials.water.waveHeight = 0.3;
-        this.materials.water.bumpHeight = 0.1;
+        this.materials.water.windForce = -8;
+        this.materials.water.waveHeight = 0.4;
+        this.materials.water.bumpHeight = 0.15;
         this.materials.water.windDirection = new BABYLON.Vector2(1, 1);
-        this.materials.water.waterColor = new BABYLON.Color3(0.1, 0.4, 0.6);
-        this.materials.water.colorBlendFactor = 0.3;
-        this.materials.water.waveLength = 0.3;
+        this.materials.water.waterColor = new BABYLON.Color3(0.05, 0.3, 0.5);
+        this.materials.water.colorBlendFactor = 0.4;
+        this.materials.water.waveLength = 0.4;
+        this.materials.water.waveSpeed = 15;
 
-        // Add reflections to water
+        // Enhanced water reflections and refractions
         this.materials.water.addToRenderList(scene.meshes[0]);
+        this.materials.water.useLogarithmicDepth = true;
     }
 
     setupUI() {
