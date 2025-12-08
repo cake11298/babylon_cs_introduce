@@ -29,9 +29,10 @@ export default class LightingSystem {
         mainLight.diffuse = new BABYLON.Color3(1.0, 0.95, 0.85);
         mainLight.specular = new BABYLON.Color3(1.0, 0.9, 0.7);
 
-        // === 陰影映射（优化：降低分辨率，移除模糊）===
-        this.shadowGenerator = new BABYLON.ShadowGenerator(512, mainLight); // 1024 -> 512
-        this.shadowGenerator.useExponentialShadowMap = true; // 使用简单的指数阴影
+        // === 陰影映射（已提升：提高质量以配合FBX模型）===
+        this.shadowGenerator = new BABYLON.ShadowGenerator(1024, mainLight); // 512 -> 1024（提高质量）
+        this.shadowGenerator.usePercentageCloserFiltering = true; // 使用PCF软阴影
+        this.shadowGenerator.filteringQuality = BABYLON.ShadowGenerator.QUALITY_HIGH;
         this.shadowGenerator.bias = 0.001;
 
         // === 環境光：半球光 ===
