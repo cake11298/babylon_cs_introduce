@@ -152,8 +152,8 @@ class BarSimulator {
                 this.interactionSystem,
                 this.cocktailSystem
             );
-            this.barEnvironment.createEnvironment();
-            this.updateLoadingProgress(92, '✓ 酒吧環境已建構');
+            await this.barEnvironment.createEnvironment();
+            this.updateLoadingProgress(92, '✓ 酒吧環境已建構（含FBX模型）');
 
             // 7. 初始化 NPC 管理器
             this.updateLoadingProgress(95, '正在初始化 NPC...');

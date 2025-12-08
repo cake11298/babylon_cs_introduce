@@ -7,6 +7,7 @@ import * as BABYLON from '@babylonjs/core';
 import type PhysicsSystem from './PhysicsSystem';
 import type InteractionSystem from './InteractionSystem';
 import type CocktailSystem from './CocktailSystem';
+import ModelLoader from './ModelLoader';
 import { ItemType } from '../types/types';
 
 export default class BarEnvironment {
@@ -14,6 +15,7 @@ export default class BarEnvironment {
     private physics: PhysicsSystem;
     private interaction: InteractionSystem;
     private cocktail: CocktailSystem;
+    private modelLoader: ModelLoader;
 
     // 場景物件
     private bottles: BABYLON.Mesh[] = [];
@@ -30,18 +32,19 @@ export default class BarEnvironment {
         this.physics = physics;
         this.interaction = interaction;
         this.cocktail = cocktail;
+        this.modelLoader = new ModelLoader(scene);
     }
 
     /**
-     * 創建完整的酒吧環境
+     * 創建完整的酒吧環境（已升级：支持FBX模型）
      */
-    createEnvironment(): void {
+    async createEnvironment(): Promise<void> {
         this.createFloorAndWalls();
         this.createBarCounter();
         this.createLiquorShelf();
-        this.createBarBottles();
+        await this.createBarBottles(); // 异步加载FBX模型
         this.createGlasses();
-        this.createBarTools();
+        await this.createBarTools(); // 异步加载FBX模型
         this.createFurniture();
     }
 
@@ -56,9 +59,11 @@ export default class BarEnvironment {
             this.scene
         );
         const floorMaterial = new BABYLON.PBRMaterial('floorMat', this.scene);
-        floorMaterial.albedoColor = new BABYLON.Color3(0.3, 0.25, 0.2);
-        floorMaterial.metallic = 0.1;
-        floorMaterial.roughness = 0.8;
+        floorMaterial.albedoColor = new BABYLON.Color3(0.35, 0.3, 0.25);
+        floorMaterial.metallic = 0.0; // 木地板不是金属
+        floorMaterial.roughness = 0.7;
+        floorMaterial.bumpTexture = null; // 可以添加法线贴图
+        floorMaterial.environmentIntensity = 1.2; // 增加环境反射
         floor.material = floorMaterial;
         floor.receiveShadows = true;
 
@@ -131,9 +136,11 @@ export default class BarEnvironment {
         counter.position = new BABYLON.Vector3(0, 1.05, -3);
 
         const counterMaterial = new BABYLON.PBRMaterial('counterMat', this.scene);
-        counterMaterial.albedoColor = new BABYLON.Color3(0.2, 0.15, 0.1);
-        counterMaterial.metallic = 0.3;
-        counterMaterial.roughness = 0.4;
+        counterMaterial.albedoColor = new BABYLON.Color3(0.25, 0.2, 0.15);
+        counterMaterial.metallic = 0.4; // 提高金属感
+        counterMaterial.roughness = 0.3; // 降低粗糙度，更光滑
+        counterMaterial.environmentIntensity = 1.5; // 增加环境反射
+        counterMaterial.reflectivityColor = new BABYLON.Color3(0.8, 0.8, 0.8);
         counter.material = counterMaterial;
         counter.receiveShadows = true;
 
@@ -207,51 +214,87 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建酒瓶
+     * 創建酒瓶（已升级：使用FBX高质量模型）
      */
-    private createBarBottles(): void {
-        const liquorTypes = ['vodka', 'gin', 'rum', 'whiskey', 'tequila', 'brandy'];
-        const liquorColors: { [key: string]: BABYLON.Color3 } = {
-            vodka: new BABYLON.Color3(0.95, 0.95, 0.95),
-            gin: new BABYLON.Color3(0.9, 0.95, 0.97),
-            rum: new BABYLON.Color3(0.8, 0.6, 0.4),
-            whiskey: new BABYLON.Color3(0.7, 0.4, 0.2),
-            tequila: new BABYLON.Color3(0.95, 0.85, 0.7),
-            brandy: new BABYLON.Color3(0.55, 0.27, 0.07)
-        };
+    private async createBarBottles(): Promise<void> {
+        const liquorTypes = ['whiskey', 'gin', 'whiskey'];
 
-        // 在酒架上創建酒瓶（僅創建3個以提升性能）
-        const bottlePositions = [
-            new BABYLON.Vector3(-2, 2.0, -8),
-            new BABYLON.Vector3(0, 2.0, -8),
-            new BABYLON.Vector3(2, 2.0, -8)
+        // FBX模型配置
+        const modelConfigs = [
+            {
+                name: 'bottle_makers_mark',
+                modelPath: '/materials/Bottle_of_Maker_s_Mar_1208132858_texture.fbx',
+                texturePath: '/materials/Bottle_of_Maker_s_Mar_1208132858_texture.png',
+                position: new BABYLON.Vector3(-2, 2.0, -8),
+                liquorType: 'whiskey'
+            },
+            {
+                name: 'bottle_gin',
+                modelPath: '/materials/Gin_Bottle_Image_1208132907_texture.fbx',
+                texturePath: '/materials/Gin_Bottle_Image_1208132907_texture.png',
+                position: new BABYLON.Vector3(0, 2.0, -8),
+                liquorType: 'gin'
+            },
+            {
+                name: 'bottle_makers_mark_2',
+                modelPath: '/materials/Bottle_of_Maker_s_Mar_1208132858_texture.fbx',
+                texturePath: '/materials/Bottle_of_Maker_s_Mar_1208132858_texture.png',
+                position: new BABYLON.Vector3(2, 2.0, -8),
+                liquorType: 'whiskey'
+            }
         ];
 
-        bottlePositions.forEach((position, index) => {
-            const liquorType = liquorTypes[index % liquorTypes.length];
+        // 加载所有FBX模型
+        for (const config of modelConfigs) {
+            try {
+                const bottle = await this.modelLoader.loadFBXModel({
+                    name: config.name,
+                    modelPath: config.modelPath,
+                    texturePath: config.texturePath,
+                    position: config.position,
+                    scale: new BABYLON.Vector3(0.01, 0.01, 0.01)
+                }) as BABYLON.Mesh;
 
-            const bottle = this.createBottle(
-                `bottle_${index}`,
-                position,
-                liquorColors[liquorType]
-            );
+                this.bottles.push(bottle);
 
-            this.bottles.push(bottle);
+                // 註冊為可互動物品
+                this.interaction.registerInteractable(
+                    bottle,
+                    ItemType.BOTTLE,
+                    config.liquorType
+                );
 
-            // 註冊為可互動物品
-            this.interaction.registerInteractable(
-                bottle,
-                ItemType.BOTTLE,
-                liquorType
-            );
+                // 添加物理
+                this.physics.addCylinderBody(bottle, {
+                    mass: 0.5,
+                    restitution: 0.3,
+                    friction: 0.6
+                });
 
-            // 添加物理
-            this.physics.addCylinderBody(bottle, {
-                mass: 0.5,
-                restitution: 0.3,
-                friction: 0.6
-            });
-        });
+                console.log(`✓ Loaded FBX bottle: ${config.name}`);
+            } catch (error) {
+                console.error(`Failed to load bottle ${config.name}, using fallback`, error);
+                // 如果FBX加载失败，使用原来的简单模型
+                const fallbackBottle = this.createBottle(
+                    config.name,
+                    config.position,
+                    new BABYLON.Color3(0.7, 0.4, 0.2)
+                );
+                this.bottles.push(fallbackBottle);
+
+                this.interaction.registerInteractable(
+                    fallbackBottle,
+                    ItemType.BOTTLE,
+                    config.liquorType
+                );
+
+                this.physics.addCylinderBody(fallbackBottle, {
+                    mass: 0.5,
+                    restitution: 0.3,
+                    friction: 0.6
+                });
+            }
+        }
     }
 
     /**
@@ -356,43 +399,69 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建調酒工具
+     * 創建調酒工具（已升级：使用FBX高质量模型）
      */
-    private createBarTools(): void {
-        // Shaker（搖酒器）
-        const shaker = BABYLON.MeshBuilder.CreateCylinder(
-            'shaker',
-            {
-                height: 0.65,
-                diameterTop: 0.4,
-                diameterBottom: 0.44,
-                tessellation: 24
-            },
-            this.scene
-        );
-        shaker.position = new BABYLON.Vector3(-5, 1.2, -3);
+    private async createBarTools(): Promise<void> {
+        // Shaker（搖酒器）- 使用FBX模型
+        try {
+            const shaker = await this.modelLoader.loadFBXModel({
+                name: 'shaker',
+                modelPath: '/materials/Stainless_Steel_Cockt_1208132913_texture.fbx',
+                texturePath: '/materials/Stainless_Steel_Cockt_1208132913_texture.png',
+                position: new BABYLON.Vector3(-5, 1.2, -3),
+                scale: new BABYLON.Vector3(0.01, 0.01, 0.01)
+            }) as BABYLON.Mesh;
 
-        const shakerMaterial = new BABYLON.PBRMaterial('shakerMat', this.scene);
-        shakerMaterial.albedoColor = new BABYLON.Color3(0.8, 0.8, 0.85);
-        shakerMaterial.metallic = 0.9;
-        shakerMaterial.roughness = 0.3;
-        shaker.material = shakerMaterial;
-        shaker.castShadow = true;
+            this.barTools.shaker = shaker;
 
-        this.barTools.shaker = shaker;
+            // 註冊為可互動物品
+            this.interaction.registerInteractable(shaker, ItemType.SHAKER);
 
-        // 註冊為可互動物品
-        this.interaction.registerInteractable(shaker, ItemType.SHAKER);
+            // 添加物理
+            this.physics.addCylinderBody(shaker, {
+                mass: 0.6,
+                restitution: 0.4,
+                friction: 0.5
+            });
 
-        // 添加物理
-        this.physics.addCylinderBody(shaker, {
-            mass: 0.6,
-            restitution: 0.4,
-            friction: 0.5
-        });
+            // 初始化 Shaker 容器
+            this.cocktail.initContainer(shaker, 500);
 
-        // 初始化 Shaker 容器
-        this.cocktail.initContainer(shaker, 500);
+            console.log('✓ Loaded FBX shaker model');
+        } catch (error) {
+            console.error('Failed to load shaker FBX, using fallback', error);
+            // 如果失败，使用原来的简单模型
+            const shaker = BABYLON.MeshBuilder.CreateCylinder(
+                'shaker',
+                {
+                    height: 0.65,
+                    diameterTop: 0.4,
+                    diameterBottom: 0.44,
+                    tessellation: 24
+                },
+                this.scene
+            );
+            shaker.position = new BABYLON.Vector3(-5, 1.2, -3);
+
+            const shakerMaterial = new BABYLON.PBRMaterial('shakerMat', this.scene);
+            shakerMaterial.albedoColor = new BABYLON.Color3(0.8, 0.8, 0.85);
+            shakerMaterial.metallic = 0.9;
+            shakerMaterial.roughness = 0.3;
+            shaker.material = shakerMaterial;
+            shaker.castShadow = true;
+
+            this.barTools.shaker = shaker;
+
+            this.interaction.registerInteractable(shaker, ItemType.SHAKER);
+
+            this.physics.addCylinderBody(shaker, {
+                mass: 0.6,
+                restitution: 0.4,
+                friction: 0.5
+            });
+
+            this.cocktail.initContainer(shaker, 500);
+        }
 
         // Jigger（量酒器）
         const jigger = BABYLON.MeshBuilder.CreateCylinder(
