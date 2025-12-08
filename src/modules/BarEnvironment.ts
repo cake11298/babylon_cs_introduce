@@ -399,51 +399,73 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建調酒工具（優化版：使用高品質幾何體）
+     * 創建調酒工具（使用FBX模型）
      */
     private async createBarTools(): Promise<void> {
-        // Shaker（搖酒器）- 優化的幾何體
-        const shaker = BABYLON.MeshBuilder.CreateCylinder(
-            'shaker',
-            {
-                height: 0.65,
-                diameterTop: 0.35,
-                diameterBottom: 0.4,
-                tessellation: 20
-            },
-            this.scene
-        );
-        shaker.position = new BABYLON.Vector3(-5, 1.2, -3);
+        // Shaker（搖酒器）- 使用FBX模型
+        try {
+            const shakerMesh = await this.modelLoader.loadFBXModel({
+                name: 'shaker',
+                modelPath: '/materials/Stainless_Steel_Cockt_1208132913_texture.fbx',
+                texturePath: '/materials/Stainless_Steel_Cockt_1208132913_texture.png',
+                position: new BABYLON.Vector3(-5, 1.2, -3),
+                scale: new BABYLON.Vector3(0.01, 0.01, 0.01)
+            });
 
-        // 高品質不鏽鋼材質
-        const shakerMaterial = new BABYLON.PBRMaterial('shakerMat', this.scene);
-        shakerMaterial.albedoColor = new BABYLON.Color3(0.85, 0.85, 0.88);
-        shakerMaterial.metallic = 0.95; // 高金屬感
-        shakerMaterial.roughness = 0.2; // 拋光不鏽鋼
-        shakerMaterial.environmentIntensity = 1.2;
-        shakerMaterial.reflectivityColor = new BABYLON.Color3(0.9, 0.9, 0.9);
-        shakerMaterial.microSurface = 0.9;
-        shaker.material = shakerMaterial;
-        shaker.castShadow = true;
+            shakerMesh.castShadow = true;
+            this.barTools.shaker = shakerMesh as BABYLON.Mesh;
 
-        this.barTools.shaker = shaker;
+            // 註冊為可互動物品
+            this.interaction.registerInteractable(this.barTools.shaker, ItemType.SHAKER);
 
-        // 註冊為可互動物品
-        this.interaction.registerInteractable(shaker, ItemType.SHAKER);
+            // 添加物理
+            this.physics.addCylinderBody(this.barTools.shaker, {
+                mass: 0.6,
+                restitution: 0.4,
+                friction: 0.5
+            });
 
-        // 添加物理
-        this.physics.addCylinderBody(shaker, {
-            mass: 0.6,
-            restitution: 0.4,
-            friction: 0.5
-        });
+            // 初始化 Shaker 容器
+            this.cocktail.initContainer(this.barTools.shaker, 500);
 
-        // 初始化 Shaker 容器
-        this.cocktail.initContainer(shaker, 500);
+            console.log('✓ Loaded FBX shaker model');
+        } catch (error) {
+            console.error('Failed to load shaker FBX, using fallback:', error);
+            // 如果加載失敗，使用備用幾何體
+            const shaker = BABYLON.MeshBuilder.CreateCylinder(
+                'shaker',
+                {
+                    height: 0.65,
+                    diameterTop: 0.35,
+                    diameterBottom: 0.4,
+                    tessellation: 20
+                },
+                this.scene
+            );
+            shaker.position = new BABYLON.Vector3(-5, 1.2, -3);
 
-        console.log('✓ Created optimized shaker');
+            // 高品質不鏽鋼材質
+            const shakerMaterial = new BABYLON.PBRMaterial('shakerMat', this.scene);
+            shakerMaterial.albedoColor = new BABYLON.Color3(0.85, 0.85, 0.88);
+            shakerMaterial.metallic = 0.95;
+            shakerMaterial.roughness = 0.2;
+            shakerMaterial.environmentIntensity = 1.2;
+            shakerMaterial.reflectivityColor = new BABYLON.Color3(0.9, 0.9, 0.9);
+            shakerMaterial.microSurface = 0.9;
+            shaker.material = shakerMaterial;
+            shaker.castShadow = true;
 
-        // Jigger（量酒器）
+            this.barTools.shaker = shaker;
+            this.interaction.registerInteractable(shaker, ItemType.SHAKER);
+            this.physics.addCylinderBody(shaker, {
+                mass: 0.6,
+                restitution: 0.4,
+                friction: 0.5
+            });
+            this.cocktail.initContainer(shaker, 500);
+        }
+
+        // Jigger（量酒器）- 保持使用幾何體
         const jigger = BABYLON.MeshBuilder.CreateCylinder(
             'jigger',
             {
