@@ -29,8 +29,8 @@ export default class LightingSystem {
         mainLight.diffuse = new BABYLON.Color3(1.0, 0.95, 0.85);
         mainLight.specular = new BABYLON.Color3(1.0, 0.9, 0.7);
 
-        // === 級聯陰影映射（高品質陰影）===
-        this.shadowGenerator = new BABYLON.CascadedShadowGenerator(4096, mainLight);
+        // === 級聯陰影映射（優化品質以提升性能）===
+        this.shadowGenerator = new BABYLON.CascadedShadowGenerator(2048, mainLight);
         this.shadowGenerator.usePercentageCloserFiltering = true;
         this.shadowGenerator.filteringQuality = BABYLON.ShadowGenerator.QUALITY_HIGH;
         this.shadowGenerator.lambda = 0.95;
@@ -105,7 +105,9 @@ export default class LightingSystem {
         pipeline.bloomKernel = 64;
         pipeline.bloomScale = 0.7;
 
-        // === SSAO2（環境光遮蔽）- 大幅減弱以避免過暗 ===
+        // === SSAO2（環境光遮蔽）- 禁用以提升加載性能和畫面亮度 ===
+        // 注释掉SSAO以加快加载并提升亮度
+        /*
         const ssao = new BABYLON.SSAO2RenderingPipeline(
             'ssao',
             this.scene,
@@ -115,7 +117,7 @@ export default class LightingSystem {
             }
         );
         ssao.radius = 1.5;
-        ssao.totalStrength = 0.3; // 大幅降低強度，避免畫面過暗
+        ssao.totalStrength = 0.3;
         ssao.expensiveBlur = true;
         ssao.samples = 16;
         ssao.maxZ = 100;
@@ -124,6 +126,7 @@ export default class LightingSystem {
             'ssao',
             camera
         );
+        */
 
         // === 圖像處理（色調映射、色彩分級）===
         pipeline.imageProcessingEnabled = true;
@@ -152,19 +155,15 @@ export default class LightingSystem {
         pipeline.chromaticAberrationEnabled = true;
         pipeline.chromaticAberration.aberrationAmount = 15;
 
-        // === 膠片顆粒 ===
-        pipeline.grainEnabled = true;
-        pipeline.grain.intensity = 8;
-        pipeline.grain.animated = true;
+        // === 膠片顆粒 - 禁用以提升性能 ===
+        pipeline.grainEnabled = false;
 
-        // === 銳化 ===
-        pipeline.sharpenEnabled = true;
-        pipeline.sharpen.edgeAmount = 0.4;
-        pipeline.sharpen.colorAmount = 0.3;
+        // === 銳化 - 禁用以提升性能 ===
+        pipeline.sharpenEnabled = false;
 
-        // === 抗鋸齒（FXAA）===
+        // === 抗鋸齒（FXAA）- 降低采样以提升性能 ===
         pipeline.fxaaEnabled = true;
-        pipeline.samples = 4;
+        pipeline.samples = 2;
 
         // === 輝光層（用於發光物體）===
         const glowLayer = new BABYLON.GlowLayer('glow', this.scene, {

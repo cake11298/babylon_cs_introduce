@@ -9,10 +9,10 @@ export default class PlayerController {
     private scene: BABYLON.Scene;
     private canvas: HTMLCanvasElement;
 
-    // 移動速度
-    private readonly MOVE_SPEED = 0.3;
-    private readonly SPRINT_SPEED = 0.6;
-    private readonly MOUSE_SENSITIVITY = 0.006; // 提高 3 倍靈敏度
+    // 移動速度（降低以避免飞出界外）
+    private readonly MOVE_SPEED = 0.1;
+    private readonly SPRINT_SPEED = 0.2;
+    private readonly MOUSE_SENSITIVITY = 0.002; // 降低靈敏度以提升控制精度
 
     // 鍵盤狀態
     private keys: Map<string, boolean>;
