@@ -29,7 +29,6 @@ class BarSimulator {
     private npcManager!: NPCManager;
 
     // 遊戲狀態
-    private clock: BABYLON.Time;
     private isPaused: boolean = false;
     private isRecipeMenuOpen: boolean = false;
 
@@ -55,7 +54,6 @@ class BarSimulator {
         // 創建場景
         this.scene = this.createScene();
         this.camera = this.scene.activeCamera as BABYLON.UniversalCamera;
-        this.clock = new BABYLON.Time();
 
         // 異步初始化
         this.initialize();
