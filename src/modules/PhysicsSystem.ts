@@ -1,5 +1,5 @@
 /**
- * 物理系統 - 使用 Babylon.js 內建物理引擎
+ * 物理系統 - 使用 Babylon.js v1 物理引擎（Cannon.js）
  */
 
 import * as BABYLON from '@babylonjs/core';
@@ -9,12 +9,12 @@ import type { PhysicsBodyConfig } from '../types/types';
 export default class PhysicsSystem {
     private scene: BABYLON.Scene;
     private gravity: BABYLON.Vector3;
-    private physicsBodies: Map<BABYLON.Mesh, BABYLON.PhysicsBody>;
+    private physicsImpostors: Map<BABYLON.Mesh, BABYLON.PhysicsImpostor>;
 
     constructor(scene: BABYLON.Scene) {
         this.scene = scene;
         this.gravity = new BABYLON.Vector3(0, -9.81, 0);
-        this.physicsBodies = new Map();
+        this.physicsImpostors = new Map();
     }
 
     /**
@@ -22,11 +22,13 @@ export default class PhysicsSystem {
      */
     async initialize(): Promise<void> {
         // 直接使用 Cannon.js（輕量級，加載更快）
-        // 跳過 Havok 以提升加載速度
         try {
             console.log('正在載入 Cannon.js 物理引擎（輕量級）...');
-            await this.initializeCannonFallback();
-            console.log('✓ Physics system initialized with Cannon.js');
+            const { CannonJSPlugin } = await import('@babylonjs/core/Physics/v1');
+            const CANNON = await import('cannon');
+            const cannonPlugin = new CannonJSPlugin(true, 10, CANNON);
+            this.scene.enablePhysics(this.gravity, cannonPlugin);
+            console.log('✓ Physics system initialized with Cannon.js (v1 API)');
         } catch (error) {
             console.error('Failed to initialize Cannon.js physics engine:', error);
             throw new Error('No physics engine available');
@@ -34,44 +36,15 @@ export default class PhysicsSystem {
     }
 
     /**
-     * 初始化 Havok 物理引擎
-     */
-    private async initializeHavok(): Promise<void> {
-        const HavokPhysics = await import('@babylonjs/havok');
-        const { HavokPlugin } = await import('@babylonjs/core/Physics/v2/Plugins/havokPlugin');
-
-        const havokInstance = await HavokPhysics.default();
-        const havokPlugin = new HavokPlugin(true, havokInstance);
-
-        this.scene.enablePhysics(this.gravity, havokPlugin);
-    }
-
-    /**
-     * Cannon.js 後備初始化
-     */
-    private async initializeCannonFallback(): Promise<void> {
-        try {
-            const { CannonJSPlugin } = await import('@babylonjs/core/Physics/v1');
-            const CANNON = await import('cannon');
-            const cannonPlugin = new CannonJSPlugin(true, 10, CANNON);
-            this.scene.enablePhysics(this.gravity, cannonPlugin);
-            console.log('✓ Physics system initialized with Cannon.js fallback');
-        } catch (error) {
-            console.error('Failed to initialize physics engine:', error);
-            throw new Error('No physics engine available');
-        }
-    }
-
-    /**
-     * 添加盒狀剛體
+     * 添加盒狀剛體（使用 v1 PhysicsImpostor）
      */
     addBoxBody(
         mesh: BABYLON.Mesh,
         config: PhysicsBodyConfig
-    ): BABYLON.PhysicsBody {
-        const aggregate = new BABYLON.PhysicsAggregate(
+    ): BABYLON.PhysicsImpostor {
+        const impostor = new BABYLON.PhysicsImpostor(
             mesh,
-            BABYLON.PhysicsShapeType.BOX,
+            BABYLON.PhysicsImpostor.BoxImpostor,
             {
                 mass: config.mass,
                 restitution: config.restitution ?? 0.3,
@@ -80,21 +53,20 @@ export default class PhysicsSystem {
             this.scene
         );
 
-        const body = aggregate.body;
-        this.physicsBodies.set(mesh, body);
-        return body;
+        this.physicsImpostors.set(mesh, impostor);
+        return impostor;
     }
 
     /**
-     * 添加圓柱剛體
+     * 添加圓柱剛體（使用 v1 PhysicsImpostor）
      */
     addCylinderBody(
         mesh: BABYLON.Mesh,
         config: PhysicsBodyConfig
-    ): BABYLON.PhysicsBody {
-        const aggregate = new BABYLON.PhysicsAggregate(
+    ): BABYLON.PhysicsImpostor {
+        const impostor = new BABYLON.PhysicsImpostor(
             mesh,
-            BABYLON.PhysicsShapeType.CYLINDER,
+            BABYLON.PhysicsImpostor.CylinderImpostor,
             {
                 mass: config.mass,
                 restitution: config.restitution ?? 0.3,
@@ -103,21 +75,20 @@ export default class PhysicsSystem {
             this.scene
         );
 
-        const body = aggregate.body;
-        this.physicsBodies.set(mesh, body);
-        return body;
+        this.physicsImpostors.set(mesh, impostor);
+        return impostor;
     }
 
     /**
-     * 添加球狀剛體
+     * 添加球狀剛體（使用 v1 PhysicsImpostor）
      */
     addSphereBody(
         mesh: BABYLON.Mesh,
         config: PhysicsBodyConfig
-    ): BABYLON.PhysicsBody {
-        const aggregate = new BABYLON.PhysicsAggregate(
+    ): BABYLON.PhysicsImpostor {
+        const impostor = new BABYLON.PhysicsImpostor(
             mesh,
-            BABYLON.PhysicsShapeType.SPHERE,
+            BABYLON.PhysicsImpostor.SphereImpostor,
             {
                 mass: config.mass,
                 restitution: config.restitution ?? 0.3,
@@ -126,15 +97,14 @@ export default class PhysicsSystem {
             this.scene
         );
 
-        const body = aggregate.body;
-        this.physicsBodies.set(mesh, body);
-        return body;
+        this.physicsImpostors.set(mesh, impostor);
+        return impostor;
     }
 
     /**
      * 添加靜態盒狀碰撞體（質量為0，不會移動）
      */
-    addStaticBoxCollider(mesh: BABYLON.Mesh): BABYLON.PhysicsBody {
+    addStaticBoxCollider(mesh: BABYLON.Mesh): BABYLON.PhysicsImpostor {
         return this.addBoxBody(mesh, { mass: 0 });
     }
 
@@ -142,10 +112,10 @@ export default class PhysicsSystem {
      * 移除物理體
      */
     removeBody(mesh: BABYLON.Mesh): void {
-        const body = this.physicsBodies.get(mesh);
-        if (body) {
-            body.dispose();
-            this.physicsBodies.delete(mesh);
+        const impostor = this.physicsImpostors.get(mesh);
+        if (impostor) {
+            impostor.dispose();
+            this.physicsImpostors.delete(mesh);
         }
     }
 
@@ -153,9 +123,9 @@ export default class PhysicsSystem {
      * 設定物體速度
      */
     setVelocity(mesh: BABYLON.Mesh, velocity: BABYLON.Vector3): void {
-        const body = this.physicsBodies.get(mesh);
-        if (body) {
-            body.setLinearVelocity(velocity);
+        const impostor = this.physicsImpostors.get(mesh);
+        if (impostor) {
+            impostor.setLinearVelocity(velocity);
         }
     }
 
@@ -163,21 +133,22 @@ export default class PhysicsSystem {
      * 獲取物體速度
      */
     getVelocity(mesh: BABYLON.Mesh): BABYLON.Vector3 | null {
-        const body = this.physicsBodies.get(mesh);
-        return body ? body.getLinearVelocity() : null;
+        const impostor = this.physicsImpostors.get(mesh);
+        return impostor ? impostor.getLinearVelocity() : null;
     }
 
     /**
      * 啟用/禁用物理
      */
     setPhysicsEnabled(mesh: BABYLON.Mesh, enabled: boolean): void {
-        const body = this.physicsBodies.get(mesh);
-        if (body) {
-            body.setMotionType(
-                enabled
-                    ? BABYLON.PhysicsMotionType.DYNAMIC
-                    : BABYLON.PhysicsMotionType.STATIC
-            );
+        const impostor = this.physicsImpostors.get(mesh);
+        if (impostor && impostor.physicsBody) {
+            if (enabled) {
+                impostor.physicsBody.mass = impostor.getParam('mass') || 1;
+            } else {
+                impostor.physicsBody.mass = 0;
+            }
+            impostor.physicsBody.updateMassProperties();
         }
     }
 
@@ -185,7 +156,7 @@ export default class PhysicsSystem {
      * 清理所有物理體
      */
     dispose(): void {
-        this.physicsBodies.forEach(body => body.dispose());
-        this.physicsBodies.clear();
+        this.physicsImpostors.forEach(impostor => impostor.dispose());
+        this.physicsImpostors.clear();
     }
 }
