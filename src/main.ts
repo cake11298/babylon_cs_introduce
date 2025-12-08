@@ -106,11 +106,11 @@ class BarSimulator {
             this.showLoadingScreen();
             this.updateLoadingProgress(0, '正在初始化...');
 
-            // 1. 初始化物理系統（這是最慢的部分）
+            // 1. 初始化物理系統（已优化：瞬时加载）
             this.updateLoadingProgress(10, '正在載入物理引擎...');
             this.physicsSystem = new PhysicsSystem(this.scene);
-            await this.physicsSystem.initialize();
-            this.updateLoadingProgress(30, '✓ 物理引擎已載入');
+            this.physicsSystem.initialize();
+            this.updateLoadingProgress(30, '✓ 物理引擎已載入（瞬时）');
 
             // 2. 初始化互動系統
             this.updateLoadingProgress(40, '正在初始化互動系統...');

@@ -4,6 +4,8 @@
 
 import * as BABYLON from '@babylonjs/core';
 import '@babylonjs/core/Physics/physicsEngineComponent';
+import { CannonJSPlugin } from '@babylonjs/core/Physics/v1';
+import * as CANNON from 'cannon';
 import type { PhysicsBodyConfig } from '../types/types';
 
 export default class PhysicsSystem {
@@ -18,17 +20,14 @@ export default class PhysicsSystem {
     }
 
     /**
-     * 初始化物理引擎
+     * 初始化物理引擎（已优化：静态导入，无需异步加载）
      */
-    async initialize(): Promise<void> {
-        // 直接使用 Cannon.js（輕量級，加載更快）
+    initialize(): void {
         try {
-            console.log('正在載入 Cannon.js 物理引擎（輕量級）...');
-            const { CannonJSPlugin } = await import('@babylonjs/core/Physics/v1');
-            const CANNON = await import('cannon');
+            console.log('正在初始化 Cannon.js 物理引擎...');
             const cannonPlugin = new CannonJSPlugin(true, 10, CANNON);
             this.scene.enablePhysics(this.gravity, cannonPlugin);
-            console.log('✓ Physics system initialized with Cannon.js (v1 API)');
+            console.log('✓ Physics system initialized with Cannon.js (instant load)');
         } catch (error) {
             console.error('Failed to initialize Cannon.js physics engine:', error);
             throw new Error('No physics engine available');

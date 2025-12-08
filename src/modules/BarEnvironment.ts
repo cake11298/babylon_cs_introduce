@@ -436,16 +436,16 @@ export default class BarEnvironment {
             new BABYLON.Vector3(0, 0, 3)
         ];
 
-        const tableMaterial = new BABYLON.PBRMaterial('tableMat', this.scene);
-        tableMaterial.albedoColor = new BABYLON.Color3(0.3, 0.2, 0.1);
-        tableMaterial.metallic = 0.2;
-        tableMaterial.roughness = 0.6;
+        // 使用StandardMaterial以提升性能（家具不需要PBR）
+        const tableMaterial = new BABYLON.StandardMaterial('tableMat', this.scene);
+        tableMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.2, 0.1);
+        tableMaterial.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
 
         tablePositions.forEach((position, index) => {
-            // 桌面
+            // 桌面（优化：降低多边形数量）
             const tableTop = BABYLON.MeshBuilder.CreateCylinder(
                 `tableTop_${index}`,
-                { height: 0.1, diameter: 1.2, tessellation: 24 },
+                { height: 0.1, diameter: 1.2, tessellation: 12 },
                 this.scene
             );
             tableTop.position = new BABYLON.Vector3(position.x, 0.75, position.z);
@@ -457,10 +457,10 @@ export default class BarEnvironment {
 
             this.physics.addStaticBoxCollider(tableTop);
 
-            // 桌腿
+            // 桌腿（优化：降低多边形数量）
             const tableLeg = BABYLON.MeshBuilder.CreateCylinder(
                 `tableLeg_${index}`,
-                { height: 0.7, diameter: 0.1, tessellation: 12 },
+                { height: 0.7, diameter: 0.1, tessellation: 8 },
                 this.scene
             );
             tableLeg.position = new BABYLON.Vector3(position.x, 0.35, position.z);
@@ -474,26 +474,26 @@ export default class BarEnvironment {
             new BABYLON.Vector3(2, 0, -1)
         ];
 
-        const stoolMaterial = new BABYLON.PBRMaterial('stoolMat', this.scene);
-        stoolMaterial.albedoColor = new BABYLON.Color3(0.2, 0.15, 0.1);
-        stoolMaterial.metallic = 0.3;
-        stoolMaterial.roughness = 0.5;
+        // 使用StandardMaterial以提升性能（椅子不需要PBR）
+        const stoolMaterial = new BABYLON.StandardMaterial('stoolMat', this.scene);
+        stoolMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.15, 0.1);
+        stoolMaterial.specularColor = new BABYLON.Color3(0.15, 0.15, 0.15);
 
         stoolPositions.forEach((position, index) => {
-            // 椅座
+            // 椅座（优化：降低多边形数量）
             const seat = BABYLON.MeshBuilder.CreateCylinder(
                 `stoolSeat_${index}`,
-                { height: 0.08, diameter: 0.4, tessellation: 16 },
+                { height: 0.08, diameter: 0.4, tessellation: 12 },
                 this.scene
             );
             seat.position = new BABYLON.Vector3(position.x, 0.65, position.z);
             seat.material = stoolMaterial;
             seat.receiveShadows = true;
 
-            // 椅腿
+            // 椅腿（优化：降低多边形数量）
             const leg = BABYLON.MeshBuilder.CreateCylinder(
                 `stoolLeg_${index}`,
-                { height: 0.6, diameter: 0.06, tessellation: 12 },
+                { height: 0.6, diameter: 0.06, tessellation: 8 },
                 this.scene
             );
             leg.position = new BABYLON.Vector3(position.x, 0.3, position.z);
