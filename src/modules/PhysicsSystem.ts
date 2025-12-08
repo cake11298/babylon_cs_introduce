@@ -4,13 +4,10 @@
 
 import * as BABYLON from '@babylonjs/core';
 import '@babylonjs/core/Physics/physicsEngineComponent';
-import { HavokPlugin } from '@babylonjs/core/Physics/v2/Plugins/havokPlugin';
-import HavokPhysics from '@babylonjs/havok';
 import type { PhysicsBodyConfig } from '../types/types';
 
 export default class PhysicsSystem {
     private scene: BABYLON.Scene;
-    private physicsPlugin: HavokPlugin | null = null;
     private gravity: BABYLON.Vector3;
     private physicsBodies: Map<BABYLON.Mesh, BABYLON.PhysicsBody>;
 
@@ -25,14 +22,17 @@ export default class PhysicsSystem {
      */
     async initialize(): Promise<void> {
         try {
-            // 使用 Havok 物理引擎（Babylon 推薦的高性能物理引擎）
-            const havokInstance = await HavokPhysics();
-            this.physicsPlugin = new HavokPlugin(true, havokInstance);
+            // 嘗試使用 Havok 物理引擎
+            const HavokPhysics = await import('@babylonjs/havok');
+            const { HavokPlugin } = await import('@babylonjs/core/Physics/v2/Plugins/havokPlugin');
 
-            this.scene.enablePhysics(this.gravity, this.physicsPlugin);
-            console.log('Physics system initialized with Havok engine');
+            const havokInstance = await HavokPhysics.default();
+            const havokPlugin = new HavokPlugin(true, havokInstance);
+
+            this.scene.enablePhysics(this.gravity, havokPlugin);
+            console.log('✓ Physics system initialized with Havok engine');
         } catch (error) {
-            console.warn('Havok not available, using fallback', error);
+            console.warn('Havok not available, using Cannon.js fallback', error);
             // 如果 Havok 不可用，使用 Cannon.js 作為後備
             await this.initializeCannonFallback();
         }
@@ -42,11 +42,16 @@ export default class PhysicsSystem {
      * Cannon.js 後備初始化
      */
     private async initializeCannonFallback(): Promise<void> {
-        const { CannonJSPlugin } = await import('@babylonjs/core/Physics/v1');
-        const CANNON = await import('cannon');
-        const cannonPlugin = new CannonJSPlugin(true, 10, CANNON);
-        this.scene.enablePhysics(this.gravity, cannonPlugin);
-        console.log('Physics system initialized with Cannon.js fallback');
+        try {
+            const { CannonJSPlugin } = await import('@babylonjs/core/Physics/v1');
+            const CANNON = await import('cannon');
+            const cannonPlugin = new CannonJSPlugin(true, 10, CANNON);
+            this.scene.enablePhysics(this.gravity, cannonPlugin);
+            console.log('✓ Physics system initialized with Cannon.js fallback');
+        } catch (error) {
+            console.error('Failed to initialize physics engine:', error);
+            throw new Error('No physics engine available');
+        }
     }
 
     /**
