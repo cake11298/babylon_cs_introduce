@@ -69,24 +69,30 @@ export default class ModelLoader {
                 rootMesh.scaling = new BABYLON.Vector3(0.01, 0.01, 0.01);
             }
 
-            // GLB 檔案通常已經包含材質，不需要額外貼圖
-            // FBX 可能需要外部貼圖
+            // ===== 材質處理：保留 GLB 嵌入的 PBR 材質 =====
+            // GLB 檔案已經包含完整的 PBR 材質和貼圖，不需要手動覆蓋
+            // 只有 FBX 可能需要外部貼圖
             if (config.texturePath && fileExtension === 'fbx') {
                 this.applyTexture(result.meshes, config.texturePath);
             }
 
-            // 启用阴影和碰撞
+            // ===== 射線檢測優化：預設禁用所有網格的 isPickable =====
+            // 這樣可以避免對高多邊形模型進行昂貴的射線檢測
+            // 實際的互動將由外部的簡化碰撞體處理（見 BarEnvironment.ts）
             result.meshes.forEach(mesh => {
                 if (mesh instanceof BABYLON.Mesh) {
                     mesh.receiveShadows = true;
-                    // 禁用子網格的碰撞檢測，避免ray casting問題
+                    // 禁用射線檢測和碰撞檢測
                     mesh.isPickable = false;
+                    mesh.checkCollisions = false;
                 }
             });
 
-            // 只讓根網格可選取
+            // ===== 關鍵修改：根網格也設為不可選取 =====
+            // 讓外部的碰撞體負責處理所有的射線檢測和互動
             if (rootMesh instanceof BABYLON.Mesh) {
-                rootMesh.isPickable = true;
+                rootMesh.isPickable = false;
+                rootMesh.checkCollisions = false;
             }
 
             // 保存加载的模型
