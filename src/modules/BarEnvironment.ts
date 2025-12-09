@@ -7,7 +7,6 @@ import * as BABYLON from '@babylonjs/core';
 import type PhysicsSystem from './PhysicsSystem';
 import type InteractionSystem from './InteractionSystem';
 import type CocktailSystem from './CocktailSystem';
-import ModelLoader from './ModelLoader';
 import { ItemType } from '../types/types';
 
 export default class BarEnvironment {
@@ -15,7 +14,6 @@ export default class BarEnvironment {
     private physics: PhysicsSystem;
     private interaction: InteractionSystem;
     private cocktail: CocktailSystem;
-    private modelLoader: ModelLoader;
 
     // 場景物件
     private bottles: BABYLON.Mesh[] = [];
@@ -32,59 +30,66 @@ export default class BarEnvironment {
         this.physics = physics;
         this.interaction = interaction;
         this.cocktail = cocktail;
-        this.modelLoader = new ModelLoader(scene);
     }
 
     /**
-     * 創建完整的酒吧環境（已升级：支持FBX模型）
+     * 創建完整的酒吧環境（程序化幾何體）
      */
     async createEnvironment(): Promise<void> {
         this.createFloorAndWalls();
         this.createBarCounter();
         this.createLiquorShelf();
-        await this.createBarBottles(); // 异步加载FBX模型
+        this.createBarBottles(); // 程序化幾何體
         this.createGlasses();
-        await this.createBarTools(); // 异步加载FBX模型
+        await this.createBarTools(); // 仍需async以保持兼容性
         this.createFurniture();
     }
 
     /**
-     * 創建地板和牆壁（高品質PBR材質）
+     * 創建地板和牆壁（中世紀風格PBR材質）
      */
     private createFloorAndWalls(): void {
-        // 地板 - 深色木質地板
+        // 地板 - 古老石板地板（中世紀風格）
         const floor = BABYLON.MeshBuilder.CreateGround(
             'floor',
             { width: 30, height: 30 },
             this.scene
         );
         const floorMaterial = new BABYLON.PBRMaterial('floorMat', this.scene);
-        floorMaterial.albedoColor = new BABYLON.Color3(0.2, 0.15, 0.1); // 深色木質
+        floorMaterial.albedoColor = new BABYLON.Color3(0.15, 0.13, 0.12); // 深灰色石材
         floorMaterial.metallic = 0.0;
-        floorMaterial.roughness = 0.6;
-        floorMaterial.environmentIntensity = 0.8;
-        // 添加微弱的反射效果
-        floorMaterial.reflectivityColor = new BABYLON.Color3(0.15, 0.12, 0.1);
-        floorMaterial.microSurface = 0.7;
+        floorMaterial.roughness = 0.95; // 粗糙的石材表面
+        floorMaterial.environmentIntensity = 0.4;
+        // 添加石材的細微反射
+        floorMaterial.reflectivityColor = new BABYLON.Color3(0.08, 0.08, 0.08);
+        floorMaterial.microSurface = 0.5;
+        // 添加凹凸感模擬石材縫隙
+        floorMaterial.bumpTexture = new BABYLON.Texture('', this.scene);
+        floorMaterial.useParallax = true;
+        floorMaterial.parallaxScaleBias = 0.02;
         floor.material = floorMaterial;
         floor.receiveShadows = true;
         floor.checkCollisions = true;
         this.physics.addStaticBoxCollider(floor);
 
-        // 後牆 - 深色磚牆質感
+        // 牆壁材質 - 都鐸式/古老石牆風格
+        const wallMaterial = new BABYLON.PBRMaterial('wallMat', this.scene);
+        wallMaterial.albedoColor = new BABYLON.Color3(0.22, 0.18, 0.15); // 溫暖的泥土棕色
+        wallMaterial.metallic = 0.0;
+        wallMaterial.roughness = 0.98; // 非常粗糙的牆面
+        wallMaterial.environmentIntensity = 0.25;
+        // 添加牆壁的凹凸感
+        wallMaterial.microSurface = 0.4;
+        wallMaterial.useParallax = true;
+        wallMaterial.parallaxScaleBias = 0.03;
+
+        // 後牆 - 封閉房間
         const backWall = BABYLON.MeshBuilder.CreateBox(
             'backWall',
-            { width: 30, height: 5, depth: 0.3 },
+            { width: 30, height: 5, depth: 0.5 },
             this.scene
         );
-        backWall.position = new BABYLON.Vector3(0, 2.5, -10);
-        const wallMaterial = new BABYLON.PBRMaterial('wallMat', this.scene);
-        wallMaterial.albedoColor = new BABYLON.Color3(0.25, 0.2, 0.18); // 深灰棕色
-        wallMaterial.metallic = 0.0;
-        wallMaterial.roughness = 0.95;
-        wallMaterial.environmentIntensity = 0.3;
-        // 添加細微的凹凸感
-        wallMaterial.microSurface = 0.6;
+        backWall.position = new BABYLON.Vector3(0, 2.5, -15);
         backWall.material = wallMaterial;
         backWall.receiveShadows = true;
         backWall.checkCollisions = true;
@@ -93,82 +98,87 @@ export default class BarEnvironment {
         // 左牆
         const leftWall = BABYLON.MeshBuilder.CreateBox(
             'leftWall',
-            { width: 0.3, height: 5, depth: 20 },
+            { width: 0.5, height: 5, depth: 30 },
             this.scene
         );
         leftWall.position = new BABYLON.Vector3(-15, 2.5, 0);
         leftWall.material = wallMaterial;
         leftWall.receiveShadows = true;
-
-        // 启用相机碰撞检测
         leftWall.checkCollisions = true;
-
         this.physics.addStaticBoxCollider(leftWall);
 
         // 右牆
         const rightWall = BABYLON.MeshBuilder.CreateBox(
             'rightWall',
-            { width: 0.3, height: 5, depth: 20 },
+            { width: 0.5, height: 5, depth: 30 },
             this.scene
         );
         rightWall.position = new BABYLON.Vector3(15, 2.5, 0);
         rightWall.material = wallMaterial;
         rightWall.receiveShadows = true;
-
-        // 启用相机碰撞检测
         rightWall.checkCollisions = true;
-
         this.physics.addStaticBoxCollider(rightWall);
 
-        // 天花板
+        // 前牆（入口側） - 創建封閉的房間
+        const frontWall = BABYLON.MeshBuilder.CreateBox(
+            'frontWall',
+            { width: 30, height: 5, depth: 0.5 },
+            this.scene
+        );
+        frontWall.position = new BABYLON.Vector3(0, 2.5, 15);
+        frontWall.material = wallMaterial;
+        frontWall.receiveShadows = true;
+        frontWall.checkCollisions = true;
+        this.physics.addStaticBoxCollider(frontWall);
+
+        // 天花板 - 深色木樑風格
         const ceiling = BABYLON.MeshBuilder.CreateBox(
             'ceiling',
-            { width: 30, height: 0.3, depth: 30 },
+            { width: 30, height: 0.4, depth: 30 },
             this.scene
         );
         ceiling.position = new BABYLON.Vector3(0, 5, 0);
         const ceilingMaterial = new BABYLON.PBRMaterial('ceilingMat', this.scene);
-        ceilingMaterial.albedoColor = new BABYLON.Color3(0.25, 0.22, 0.2);
+        ceilingMaterial.albedoColor = new BABYLON.Color3(0.12, 0.10, 0.08); // 深色木材
         ceilingMaterial.metallic = 0.0;
-        ceilingMaterial.roughness = 0.95;
+        ceilingMaterial.roughness = 0.9;
+        ceilingMaterial.environmentIntensity = 0.2;
         ceiling.material = ceilingMaterial;
         ceiling.receiveShadows = true;
-
-        // 启用相机碰撞检测
         ceiling.checkCollisions = true;
-
         this.physics.addStaticBoxCollider(ceiling);
     }
 
     /**
-     * 創建吧檯（高品質木質材質）
+     * 創建吧檯（中世紀風格厚重木質材質）
      */
     private createBarCounter(): void {
-        // 吧檯檯面 - 拋光深色木材
+        // 吧檯檯面 - 厚重的古老橡木
         const counter = BABYLON.MeshBuilder.CreateBox(
             'barCounter',
-            { width: 12, height: 0.15, depth: 2 },
+            { width: 12, height: 0.2, depth: 2 },
             this.scene
         );
         counter.position = new BABYLON.Vector3(0, 1.05, -3);
 
         const counterMaterial = new BABYLON.PBRMaterial('counterMat', this.scene);
-        counterMaterial.albedoColor = new BABYLON.Color3(0.18, 0.12, 0.08); // 深紅棕色
+        counterMaterial.albedoColor = new BABYLON.Color3(0.16, 0.11, 0.07); // 深棕色古木
         counterMaterial.metallic = 0.0; // 木材不是金屬
-        counterMaterial.roughness = 0.25; // 拋光效果
-        counterMaterial.environmentIntensity = 1.0;
-        // 添加木質光澤
-        counterMaterial.reflectivityColor = new BABYLON.Color3(0.3, 0.25, 0.2);
-        counterMaterial.microSurface = 0.85;
-        // 添加清漆層效果
+        counterMaterial.roughness = 0.6; // 半粗糙的老舊木材
+        counterMaterial.environmentIntensity = 0.7;
+        // 添加木質的溫暖反射
+        counterMaterial.reflectivityColor = new BABYLON.Color3(0.2, 0.15, 0.1);
+        counterMaterial.microSurface = 0.7;
+        // 添加輕微的清漆層（歲月留下的痕跡）
         counterMaterial.clearCoat.isEnabled = true;
-        counterMaterial.clearCoat.intensity = 0.5;
+        counterMaterial.clearCoat.intensity = 0.3;
+        counterMaterial.clearCoat.roughness = 0.4;
         counter.material = counterMaterial;
         counter.receiveShadows = true;
         counter.checkCollisions = true;
         this.physics.addStaticBoxCollider(counter);
 
-        // 吧檯底座 - 深色木材
+        // 吧檯底座 - 深色古木
         const base = BABYLON.MeshBuilder.CreateBox(
             'barBase',
             { width: 12, height: 1, depth: 2 },
@@ -177,10 +187,10 @@ export default class BarEnvironment {
         base.position = new BABYLON.Vector3(0, 0.5, -3);
 
         const baseMaterial = new BABYLON.PBRMaterial('baseMat', this.scene);
-        baseMaterial.albedoColor = new BABYLON.Color3(0.12, 0.08, 0.05);
+        baseMaterial.albedoColor = new BABYLON.Color3(0.10, 0.07, 0.05);
         baseMaterial.metallic = 0.0;
-        baseMaterial.roughness = 0.8;
-        baseMaterial.environmentIntensity = 0.5;
+        baseMaterial.roughness = 0.85; // 更粗糙的底座木材
+        baseMaterial.environmentIntensity = 0.4;
         base.material = baseMaterial;
         base.receiveShadows = true;
         base.checkCollisions = true;
@@ -230,154 +240,164 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建酒瓶（使用GLB模型 + 簡化碰撞體）
-     * 效能優化：使用簡單的圓柱體作為碰撞體和互動對象，GLB模型只用於視覺
+     * 創建酒瓶（高品質程序化幾何體 + PBR材質）
+     * 不同酒類使用獨特的瓶身造型
      */
-    private async createBarBottles(): Promise<void> {
+    private createBarBottles(): void {
         const bottleConfigs = [
             {
                 name: 'bottle_whiskey_1',
-                position: new BABYLON.Vector3(-2, 1.9, -8),
+                position: new BABYLON.Vector3(-4, 1.9, -8),
                 liquorType: 'whiskey',
-                modelPath: '/materials/Bottle_of_Maker_s_Mar_1208150007_texture.glb'
+                shape: 'square', // 威士忌使用方形瓶
+                liquidColor: new BABYLON.Color3(0.6, 0.35, 0.1) // 琥珀色
             },
             {
                 name: 'bottle_gin',
-                position: new BABYLON.Vector3(0, 1.9, -8),
+                position: new BABYLON.Vector3(-2, 1.9, -8),
                 liquorType: 'gin',
-                modelPath: '/materials/Gin_Bottle_Image_1208150011_texture.glb'
+                shape: 'tall', // 琴酒使用高瘦圓瓶
+                liquidColor: new BABYLON.Color3(0.95, 0.97, 0.95) // 透明偏白
             },
             {
-                name: 'bottle_whiskey_2',
+                name: 'bottle_vodka',
+                position: new BABYLON.Vector3(0, 1.9, -8),
+                liquorType: 'vodka',
+                shape: 'round', // 伏特加使用圓瓶
+                liquidColor: new BABYLON.Color3(0.98, 0.98, 1.0) // 透明無色
+            },
+            {
+                name: 'bottle_rum',
                 position: new BABYLON.Vector3(2, 1.9, -8),
-                liquorType: 'whiskey',
-                modelPath: '/materials/Bottle_of_Maker_s_Mar_1208150007_texture.glb'
+                liquorType: 'rum',
+                shape: 'wide', // 蘭姆酒使用寬瓶
+                liquidColor: new BABYLON.Color3(0.5, 0.25, 0.08) // 深琥珀色
+            },
+            {
+                name: 'bottle_tequila',
+                position: new BABYLON.Vector3(4, 1.9, -8),
+                liquorType: 'tequila',
+                shape: 'square', // 龍舌蘭使用方形瓶
+                liquidColor: new BABYLON.Color3(0.95, 0.92, 0.8) // 金黃色
             }
         ];
 
-        for (const config of bottleConfigs) {
-            try {
-                // ===== 步驟1: 創建簡單的圓柱體碰撞體 =====
-                const collider = BABYLON.MeshBuilder.CreateCylinder(
-                    `${config.name}_collider`,
-                    { height: 0.8, diameter: 0.3, tessellation: 8 },
-                    this.scene
-                );
-                collider.position = config.position;
+        bottleConfigs.forEach(config => {
+            let bottle: BABYLON.Mesh;
 
-                // 讓碰撞體不可見但可被射線檢測
-                collider.visibility = 0;
-                collider.isPickable = true;
-
-                // ===== 步驟2: 加載 GLB 視覺模型 =====
-                const visualMesh = await this.modelLoader.loadModel({
-                    name: `${config.name}_visual`,
-                    modelPath: config.modelPath,
-                    position: BABYLON.Vector3.Zero(), // 相對位置,因為會被父級化
-                    scale: new BABYLON.Vector3(1, 1, 1) // GLB 使用米為單位，不需要縮放
-                });
-
-                visualMesh.castShadow = true;
-
-                // ===== 步驟3: 將視覺模型父級化到碰撞體 =====
-                visualMesh.parent = collider;
-
-                // ===== 步驟4: 確保視覺模型不參與射線檢測 =====
-                // 禁用視覺模型及其所有子網格的拾取和碰撞檢測
-                visualMesh.isPickable = false;
-                visualMesh.checkCollisions = false;
-
-                // 遞迴禁用所有子網格
-                visualMesh.getChildMeshes().forEach(childMesh => {
-                    childMesh.isPickable = false;
-                    childMesh.checkCollisions = false;
-                });
-
-                // ===== 步驟5: 將碰撞體註冊為互動物品（不是視覺模型）=====
-                this.bottles.push(collider as BABYLON.Mesh);
-
-                this.interaction.registerInteractable(
-                    collider as BABYLON.Mesh,
-                    ItemType.BOTTLE,
-                    config.liquorType
-                );
-
-                // ===== 步驟6: 為碰撞體添加物理（不是視覺模型）=====
-                this.physics.addCylinderBody(collider as BABYLON.Mesh, {
-                    mass: 0.5,
-                    restitution: 0.3,
-                    friction: 0.6
-                });
-
-                console.log(`✓ Loaded GLB bottle with collider: ${config.name}`);
-            } catch (error) {
-                console.error(`Failed to load bottle ${config.name}, using fallback:`, error);
-                // 如果 GLB 加載失敗，使用備用幾何體
-                const color = config.liquorType === 'whiskey'
-                    ? new BABYLON.Color3(0.6, 0.3, 0.1)
-                    : new BABYLON.Color3(0.9, 0.95, 0.95);
-
-                const bottle = this.createOptimizedBottle(
-                    config.name,
-                    config.position,
-                    color
-                );
-
-                this.bottles.push(bottle);
-
-                // 註冊為可互動物品
-                this.interaction.registerInteractable(
-                    bottle,
-                    ItemType.BOTTLE,
-                    config.liquorType
-                );
-
-                // 添加物理
-                this.physics.addCylinderBody(bottle, {
-                    mass: 0.5,
-                    restitution: 0.3,
-                    friction: 0.6
-                });
-
-                console.log(`✓ Created fallback bottle: ${config.name}`);
+            // 根據不同酒類創建獨特的瓶身造型
+            switch (config.shape) {
+                case 'square':
+                    bottle = this.createSquareBottle(config.name, config.position, config.liquidColor);
+                    break;
+                case 'tall':
+                    bottle = this.createTallBottle(config.name, config.position, config.liquidColor);
+                    break;
+                case 'round':
+                    bottle = this.createRoundBottle(config.name, config.position, config.liquidColor);
+                    break;
+                case 'wide':
+                    bottle = this.createWideBottle(config.name, config.position, config.liquidColor);
+                    break;
+                default:
+                    bottle = this.createRoundBottle(config.name, config.position, config.liquidColor);
             }
-        }
+
+            this.bottles.push(bottle);
+
+            // 註冊為可互動物品
+            this.interaction.registerInteractable(
+                bottle,
+                ItemType.BOTTLE,
+                config.liquorType
+            );
+
+            // 添加物理
+            this.physics.addCylinderBody(bottle, {
+                mass: 0.5,
+                restitution: 0.3,
+                friction: 0.6
+            });
+
+            console.log(`✓ Created procedural bottle: ${config.name}`);
+        });
     }
 
     /**
-     * 創建優化的酒瓶（高品質PBR材質）
+     * 創建方形威士忌瓶（帶液體）
      */
-    private createOptimizedBottle(
+    private createSquareBottle(
         name: string,
         position: BABYLON.Vector3,
-        color: BABYLON.Color3
+        liquidColor: BABYLON.Color3
     ): BABYLON.Mesh {
-        // 瓶身 - 降低tessellation以提升性能
-        const body = BABYLON.MeshBuilder.CreateCylinder(
+        // 瓶身 - 方形
+        const body = BABYLON.MeshBuilder.CreateBox(
             `${name}_body`,
-            { height: 0.8, diameter: 0.3, tessellation: 12 },
+            { width: 0.3, height: 0.7, depth: 0.3 },
             this.scene
         );
 
-        // 瓶頸
+        // 瓶頸 - 圓柱形
         const neck = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_neck`,
-            { height: 0.2, diameterTop: 0.08, diameterBottom: 0.15, tessellation: 12 },
+            { height: 0.18, diameterTop: 0.08, diameterBottom: 0.12, tessellation: 16 },
             this.scene
         );
-        neck.position.y = 0.5;
+        neck.position.y = 0.44;
 
-        // 瓶蓋
+        // 瓶蓋 - 金屬蓋
         const cap = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_cap`,
-            { height: 0.08, diameter: 0.1, tessellation: 12 },
+            { height: 0.06, diameter: 0.1, tessellation: 16 },
             this.scene
         );
-        cap.position.y = 0.64;
+        cap.position.y = 0.56;
+
+        // 液體 - 內部稍小的方形
+        const liquid = BABYLON.MeshBuilder.CreateBox(
+            `${name}_liquid`,
+            { width: 0.28, height: 0.5, depth: 0.28 },
+            this.scene
+        );
+        liquid.position.y = -0.1;
+
+        // 創建高品質玻璃材質
+        const glassMaterial = new BABYLON.PBRMaterial(`${name}_glass`, this.scene);
+        glassMaterial.albedoColor = new BABYLON.Color3(1, 1, 1);
+        glassMaterial.metallic = 0.0;
+        glassMaterial.roughness = 0.05; // 極其光滑
+        glassMaterial.alpha = 0.15; // 高透明度
+        glassMaterial.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+        glassMaterial.indexOfRefraction = 1.5; // 玻璃折射率
+        glassMaterial.reflectivityColor = new BABYLON.Color3(1, 1, 1);
+        glassMaterial.microSurface = 0.98;
+
+        // 液體材質
+        const liquidMaterial = new BABYLON.PBRMaterial(`${name}_liquid`, this.scene);
+        liquidMaterial.albedoColor = liquidColor;
+        liquidMaterial.metallic = 0.0;
+        liquidMaterial.roughness = 0.1;
+        liquidMaterial.alpha = 0.7;
+        liquidMaterial.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+        liquidMaterial.subSurface.isTranslucencyEnabled = true;
+        liquidMaterial.subSurface.translucencyIntensity = 0.8;
+
+        // 瓶蓋材質 - 金屬
+        const capMaterial = new BABYLON.PBRMaterial(`${name}_cap_mat`, this.scene);
+        capMaterial.albedoColor = new BABYLON.Color3(0.15, 0.12, 0.08);
+        capMaterial.metallic = 0.6;
+        capMaterial.roughness = 0.4;
+
+        // 應用材質
+        body.material = glassMaterial;
+        neck.material = glassMaterial;
+        cap.material = capMaterial;
+        liquid.material = liquidMaterial;
 
         // 合併為一個網格
         const bottle = BABYLON.Mesh.MergeMeshes(
-            [body, neck, cap],
+            [body, neck, cap, liquid],
             true,
             true,
             undefined,
@@ -387,61 +407,318 @@ export default class BarEnvironment {
 
         bottle.name = name;
         bottle.position = position;
-
-        // 創建高品質玻璃材質
-        const glassMaterial = new BABYLON.PBRMaterial(`${name}_mat`, this.scene);
-        glassMaterial.albedoColor = color;
-        glassMaterial.metallic = 0.05;
-        glassMaterial.roughness = 0.15; // 光滑玻璃
-        glassMaterial.alpha = 0.85;
-        glassMaterial.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
-
-        // 添加反射效果
-        glassMaterial.reflectivityColor = new BABYLON.Color3(0.9, 0.9, 0.9);
-        glassMaterial.microSurface = 0.95;
-
-        // 添加折射效果
-        glassMaterial.indexOfRefraction = 1.5; // 玻璃的折射率
-
-        bottle.material = glassMaterial;
         bottle.castShadow = true;
 
         return bottle;
     }
 
     /**
-     * 創建杯子
+     * 創建高瘦琴酒瓶（帶液體）
+     */
+    private createTallBottle(
+        name: string,
+        position: BABYLON.Vector3,
+        liquidColor: BABYLON.Color3
+    ): BABYLON.Mesh {
+        // 瓶身 - 高瘦圓柱
+        const body = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_body`,
+            { height: 0.85, diameter: 0.22, tessellation: 24 },
+            this.scene
+        );
+
+        // 瓶頸 - 細長
+        const neck = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_neck`,
+            { height: 0.15, diameterTop: 0.06, diameterBottom: 0.11, tessellation: 20 },
+            this.scene
+        );
+        neck.position.y = 0.5;
+
+        // 瓶蓋
+        const cap = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_cap`,
+            { height: 0.05, diameter: 0.08, tessellation: 16 },
+            this.scene
+        );
+        cap.position.y = 0.6;
+
+        // 液體
+        const liquid = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_liquid`,
+            { height: 0.72, diameter: 0.2, tessellation: 24 },
+            this.scene
+        );
+        liquid.position.y = -0.065;
+
+        // 高品質玻璃材質
+        const glassMaterial = new BABYLON.PBRMaterial(`${name}_glass`, this.scene);
+        glassMaterial.albedoColor = new BABYLON.Color3(1, 1, 1);
+        glassMaterial.metallic = 0.0;
+        glassMaterial.roughness = 0.02;
+        glassMaterial.alpha = 0.12;
+        glassMaterial.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+        glassMaterial.indexOfRefraction = 1.52;
+        glassMaterial.reflectivityColor = new BABYLON.Color3(1, 1, 1);
+        glassMaterial.microSurface = 0.99;
+
+        // 液體材質
+        const liquidMaterial = new BABYLON.PBRMaterial(`${name}_liquid`, this.scene);
+        liquidMaterial.albedoColor = liquidColor;
+        liquidMaterial.metallic = 0.0;
+        liquidMaterial.roughness = 0.08;
+        liquidMaterial.alpha = 0.75;
+        liquidMaterial.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+        liquidMaterial.subSurface.isTranslucencyEnabled = true;
+        liquidMaterial.subSurface.translucencyIntensity = 0.9;
+
+        // 瓶蓋材質
+        const capMaterial = new BABYLON.PBRMaterial(`${name}_cap_mat`, this.scene);
+        capMaterial.albedoColor = new BABYLON.Color3(0.9, 0.9, 0.92);
+        capMaterial.metallic = 0.95;
+        capMaterial.roughness = 0.2;
+
+        body.material = glassMaterial;
+        neck.material = glassMaterial;
+        cap.material = capMaterial;
+        liquid.material = liquidMaterial;
+
+        const bottle = BABYLON.Mesh.MergeMeshes(
+            [body, neck, cap, liquid],
+            true,
+            true,
+            undefined,
+            false,
+            true
+        ) as BABYLON.Mesh;
+
+        bottle.name = name;
+        bottle.position = position;
+        bottle.castShadow = true;
+
+        return bottle;
+    }
+
+    /**
+     * 創建圓形伏特加瓶（帶液體）
+     */
+    private createRoundBottle(
+        name: string,
+        position: BABYLON.Vector3,
+        liquidColor: BABYLON.Color3
+    ): BABYLON.Mesh {
+        // 瓶身 - 標準圓柱
+        const body = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_body`,
+            { height: 0.75, diameter: 0.28, tessellation: 24 },
+            this.scene
+        );
+
+        // 瓶肩 - 漸變過渡
+        const shoulder = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_shoulder`,
+            { height: 0.12, diameterTop: 0.14, diameterBottom: 0.28, tessellation: 20 },
+            this.scene
+        );
+        shoulder.position.y = 0.435;
+
+        // 瓶頸
+        const neck = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_neck`,
+            { height: 0.14, diameterTop: 0.07, diameterBottom: 0.14, tessellation: 18 },
+            this.scene
+        );
+        neck.position.y = 0.565;
+
+        // 瓶蓋
+        const cap = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_cap`,
+            { height: 0.06, diameter: 0.09, tessellation: 16 },
+            this.scene
+        );
+        cap.position.y = 0.67;
+
+        // 液體
+        const liquid = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_liquid`,
+            { height: 0.65, diameter: 0.26, tessellation: 24 },
+            this.scene
+        );
+        liquid.position.y = -0.05;
+
+        // 高品質玻璃材質
+        const glassMaterial = new BABYLON.PBRMaterial(`${name}_glass`, this.scene);
+        glassMaterial.albedoColor = new BABYLON.Color3(1, 1, 1);
+        glassMaterial.metallic = 0.0;
+        glassMaterial.roughness = 0.03;
+        glassMaterial.alpha = 0.1;
+        glassMaterial.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+        glassMaterial.indexOfRefraction = 1.5;
+        glassMaterial.reflectivityColor = new BABYLON.Color3(1, 1, 1);
+        glassMaterial.microSurface = 0.98;
+
+        // 液體材質
+        const liquidMaterial = new BABYLON.PBRMaterial(`${name}_liquid`, this.scene);
+        liquidMaterial.albedoColor = liquidColor;
+        liquidMaterial.metallic = 0.0;
+        liquidMaterial.roughness = 0.05;
+        liquidMaterial.alpha = 0.8;
+        liquidMaterial.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+        liquidMaterial.subSurface.isTranslucencyEnabled = true;
+        liquidMaterial.subSurface.translucencyIntensity = 0.85;
+
+        // 瓶蓋材質
+        const capMaterial = new BABYLON.PBRMaterial(`${name}_cap_mat`, this.scene);
+        capMaterial.albedoColor = new BABYLON.Color3(0.88, 0.88, 0.9);
+        capMaterial.metallic = 0.9;
+        capMaterial.roughness = 0.25;
+
+        body.material = glassMaterial;
+        shoulder.material = glassMaterial;
+        neck.material = glassMaterial;
+        cap.material = capMaterial;
+        liquid.material = liquidMaterial;
+
+        const bottle = BABYLON.Mesh.MergeMeshes(
+            [body, shoulder, neck, cap, liquid],
+            true,
+            true,
+            undefined,
+            false,
+            true
+        ) as BABYLON.Mesh;
+
+        bottle.name = name;
+        bottle.position = position;
+        bottle.castShadow = true;
+
+        return bottle;
+    }
+
+    /**
+     * 創建寬蘭姆酒瓶（帶液體）
+     */
+    private createWideBottle(
+        name: string,
+        position: BABYLON.Vector3,
+        liquidColor: BABYLON.Color3
+    ): BABYLON.Mesh {
+        // 瓶身 - 寬矮圓柱
+        const body = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_body`,
+            { height: 0.6, diameter: 0.35, tessellation: 24 },
+            this.scene
+        );
+
+        // 瓶肩 - 寬到窄
+        const shoulder = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_shoulder`,
+            { height: 0.15, diameterTop: 0.15, diameterBottom: 0.35, tessellation: 20 },
+            this.scene
+        );
+        shoulder.position.y = 0.375;
+
+        // 瓶頸
+        const neck = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_neck`,
+            { height: 0.12, diameterTop: 0.08, diameterBottom: 0.15, tessellation: 18 },
+            this.scene
+        );
+        neck.position.y = 0.51;
+
+        // 瓶蓋
+        const cap = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_cap`,
+            { height: 0.05, diameter: 0.1, tessellation: 16 },
+            this.scene
+        );
+        cap.position.y = 0.6;
+
+        // 液體
+        const liquid = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_liquid`,
+            { height: 0.52, diameter: 0.33, tessellation: 24 },
+            this.scene
+        );
+        liquid.position.y = -0.04;
+
+        // 高品質玻璃材質
+        const glassMaterial = new BABYLON.PBRMaterial(`${name}_glass`, this.scene);
+        glassMaterial.albedoColor = new BABYLON.Color3(0.98, 0.96, 0.92);
+        glassMaterial.metallic = 0.0;
+        glassMaterial.roughness = 0.04;
+        glassMaterial.alpha = 0.14;
+        glassMaterial.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+        glassMaterial.indexOfRefraction = 1.5;
+        glassMaterial.reflectivityColor = new BABYLON.Color3(1, 1, 1);
+        glassMaterial.microSurface = 0.97;
+
+        // 液體材質
+        const liquidMaterial = new BABYLON.PBRMaterial(`${name}_liquid`, this.scene);
+        liquidMaterial.albedoColor = liquidColor;
+        liquidMaterial.metallic = 0.0;
+        liquidMaterial.roughness = 0.1;
+        liquidMaterial.alpha = 0.8;
+        liquidMaterial.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+        liquidMaterial.subSurface.isTranslucencyEnabled = true;
+        liquidMaterial.subSurface.translucencyIntensity = 0.75;
+
+        // 瓶蓋材質 - 木塞風格
+        const capMaterial = new BABYLON.PBRMaterial(`${name}_cap_mat`, this.scene);
+        capMaterial.albedoColor = new BABYLON.Color3(0.3, 0.2, 0.1);
+        capMaterial.metallic = 0.0;
+        capMaterial.roughness = 0.9;
+
+        body.material = glassMaterial;
+        shoulder.material = glassMaterial;
+        neck.material = glassMaterial;
+        cap.material = capMaterial;
+        liquid.material = liquidMaterial;
+
+        const bottle = BABYLON.Mesh.MergeMeshes(
+            [body, shoulder, neck, cap, liquid],
+            true,
+            true,
+            undefined,
+            false,
+            true
+        ) as BABYLON.Mesh;
+
+        bottle.name = name;
+        bottle.position = position;
+        bottle.castShadow = true;
+
+        return bottle;
+    }
+
+    /**
+     * 創建杯子（高品質玻璃材質與液體）
      */
     private createGlasses(): void {
-        // 在吧檯上創建2個杯子（減少以提升性能）
-        const glassPositions = [
-            new BABYLON.Vector3(-2, 1.2, -3),
-            new BABYLON.Vector3(2, 1.2, -3)
+        // 在吧檯上創建3個杯子
+        const glassConfigs = [
+            { position: new BABYLON.Vector3(-3, 1.2, -3), style: 'highball' },
+            { position: new BABYLON.Vector3(0, 1.2, -3), style: 'rocks' },
+            { position: new BABYLON.Vector3(3, 1.2, -3), style: 'coupe' }
         ];
 
-        glassPositions.forEach((position, index) => {
-            const glass = BABYLON.MeshBuilder.CreateCylinder(
-                `glass_${index}`,
-                {
-                    height: 0.6,
-                    diameterTop: 0.3,
-                    diameterBottom: 0.26,
-                    tessellation: 24
-                },
-                this.scene
-            );
-            glass.position = position;
+        glassConfigs.forEach((config, index) => {
+            let glass: BABYLON.Mesh;
 
-            // 玻璃材質
-            const glassMaterial = new BABYLON.PBRMaterial(`glassMat_${index}`, this.scene);
-            glassMaterial.albedoColor = new BABYLON.Color3(1, 1, 1);
-            glassMaterial.metallic = 0.0;
-            glassMaterial.roughness = 0.1;
-            glassMaterial.alpha = 0.3;
-            glassMaterial.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
-            glass.material = glassMaterial;
-
-            glass.castShadow = true;
+            // 根據樣式創建不同的杯子
+            switch (config.style) {
+                case 'highball':
+                    glass = this.createHighballGlass(`glass_${index}`, config.position);
+                    break;
+                case 'rocks':
+                    glass = this.createRocksGlass(`glass_${index}`, config.position);
+                    break;
+                case 'coupe':
+                    glass = this.createCoupeGlass(`glass_${index}`, config.position);
+                    break;
+                default:
+                    glass = this.createHighballGlass(`glass_${index}`, config.position);
+            }
 
             this.glasses.push(glass);
 
@@ -461,127 +738,356 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建調酒工具（使用GLB模型 + 簡化碰撞體）
-     * 效能優化：使用簡單的圓柱體作為碰撞體和互動對象，GLB模型只用於視覺
+     * 創建高球杯（Highball Glass）
      */
-    private async createBarTools(): Promise<void> {
-        // Shaker（搖酒器）- 使用GLB模型 + 碰撞體
-        try {
-            // ===== 步驟1: 創建簡單的圓柱體碰撞體 =====
-            const shakerCollider = BABYLON.MeshBuilder.CreateCylinder(
-                'shaker_collider',
-                { height: 0.65, diameterTop: 0.35, diameterBottom: 0.4, tessellation: 8 },
-                this.scene
-            );
-            shakerCollider.position = new BABYLON.Vector3(-5, 1.2, -3);
-
-            // 讓碰撞體不可見但可被射線檢測
-            shakerCollider.visibility = 0;
-            shakerCollider.isPickable = true;
-
-            // ===== 步驟2: 加載 GLB 視覺模型 =====
-            const shakerVisual = await this.modelLoader.loadModel({
-                name: 'shaker_visual',
-                modelPath: '/materials/Stainless_Steel_Cockt_1208143655_texture.glb',
-                position: BABYLON.Vector3.Zero(),
-                scale: new BABYLON.Vector3(1, 1, 1) // GLB 使用米為單位，不需要縮放
-            });
-
-            shakerVisual.castShadow = true;
-
-            // ===== 步驟3: 將視覺模型父級化到碰撞體 =====
-            shakerVisual.parent = shakerCollider;
-
-            // ===== 步驟4: 確保視覺模型不參與射線檢測 =====
-            shakerVisual.isPickable = false;
-            shakerVisual.checkCollisions = false;
-            shakerVisual.getChildMeshes().forEach(childMesh => {
-                childMesh.isPickable = false;
-                childMesh.checkCollisions = false;
-            });
-
-            // ===== 步驟5: 將碰撞體註冊為互動物品 =====
-            this.barTools.shaker = shakerCollider as BABYLON.Mesh;
-            this.interaction.registerInteractable(this.barTools.shaker, ItemType.SHAKER);
-
-            // ===== 步驟6: 為碰撞體添加物理 =====
-            this.physics.addCylinderBody(this.barTools.shaker, {
-                mass: 0.6,
-                restitution: 0.4,
-                friction: 0.5
-            });
-
-            // 初始化 Shaker 容器
-            this.cocktail.initContainer(this.barTools.shaker, 500);
-
-            console.log('✓ Loaded GLB shaker with collider');
-        } catch (error) {
-            console.error('Failed to load shaker GLB, using fallback:', error);
-            // 如果加載失敗，使用備用幾何體
-            const shaker = BABYLON.MeshBuilder.CreateCylinder(
-                'shaker',
-                {
-                    height: 0.65,
-                    diameterTop: 0.35,
-                    diameterBottom: 0.4,
-                    tessellation: 20
-                },
-                this.scene
-            );
-            shaker.position = new BABYLON.Vector3(-5, 1.2, -3);
-
-            // 高品質不鏽鋼材質
-            const shakerMaterial = new BABYLON.PBRMaterial('shakerMat', this.scene);
-            shakerMaterial.albedoColor = new BABYLON.Color3(0.85, 0.85, 0.88);
-            shakerMaterial.metallic = 0.95;
-            shakerMaterial.roughness = 0.2;
-            shakerMaterial.environmentIntensity = 1.2;
-            shakerMaterial.reflectivityColor = new BABYLON.Color3(0.9, 0.9, 0.9);
-            shakerMaterial.microSurface = 0.9;
-            shaker.material = shakerMaterial;
-            shaker.castShadow = true;
-
-            this.barTools.shaker = shaker;
-            this.interaction.registerInteractable(shaker, ItemType.SHAKER);
-            this.physics.addCylinderBody(shaker, {
-                mass: 0.6,
-                restitution: 0.4,
-                friction: 0.5
-            });
-            this.cocktail.initContainer(shaker, 500);
-        }
-
-        // Jigger（量酒器）- 保持使用幾何體
-        const jigger = BABYLON.MeshBuilder.CreateCylinder(
-            'jigger',
+    private createHighballGlass(name: string, position: BABYLON.Vector3): BABYLON.Mesh {
+        // 杯身 - 高直筒
+        const body = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_body`,
             {
-                height: 0.18,
-                diameterTop: 0.18,
-                diameterBottom: 0.26,
-                tessellation: 16
+                height: 0.55,
+                diameterTop: 0.28,
+                diameterBottom: 0.27,
+                tessellation: 32
             },
             this.scene
         );
-        jigger.position = new BABYLON.Vector3(5, 1.2, -3);
 
-        const jiggerMaterial = new BABYLON.PBRMaterial('jiggerMat', this.scene);
-        jiggerMaterial.albedoColor = new BABYLON.Color3(0.85, 0.85, 0.9);
-        jiggerMaterial.metallic = 0.85;
-        jiggerMaterial.roughness = 0.4;
-        jigger.material = jiggerMaterial;
-        jigger.castShadow = true;
+        // 杯底 - 厚實的玻璃底
+        const bottom = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_bottom`,
+            { height: 0.05, diameter: 0.27, tessellation: 32 },
+            this.scene
+        );
+        bottom.position.y = -0.3;
 
+        // 高品質玻璃材質
+        const glassMaterial = new BABYLON.PBRMaterial(`${name}_glass`, this.scene);
+        glassMaterial.albedoColor = new BABYLON.Color3(1, 1, 1);
+        glassMaterial.metallic = 0.0;
+        glassMaterial.roughness = 0.02; // 極光滑
+        glassMaterial.alpha = 0.08; // 極高透明度
+        glassMaterial.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+        glassMaterial.indexOfRefraction = 1.52; // 玻璃折射率
+        glassMaterial.reflectivityColor = new BABYLON.Color3(1, 1, 1);
+        glassMaterial.microSurface = 0.99;
+
+        body.material = glassMaterial;
+        bottom.material = glassMaterial;
+
+        const glass = BABYLON.Mesh.MergeMeshes(
+            [body, bottom],
+            true,
+            true,
+            undefined,
+            false,
+            true
+        ) as BABYLON.Mesh;
+
+        glass.name = name;
+        glass.position = position;
+        glass.castShadow = true;
+
+        return glass;
+    }
+
+    /**
+     * 創建威士忌杯（Rocks/Old Fashioned Glass）
+     */
+    private createRocksGlass(name: string, position: BABYLON.Vector3): BABYLON.Mesh {
+        // 杯身 - 矮寬
+        const body = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_body`,
+            {
+                height: 0.4,
+                diameterTop: 0.32,
+                diameterBottom: 0.28,
+                tessellation: 32
+            },
+            this.scene
+        );
+
+        // 杯底
+        const bottom = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_bottom`,
+            { height: 0.08, diameter: 0.28, tessellation: 32 },
+            this.scene
+        );
+        bottom.position.y = -0.24;
+
+        // 高品質玻璃材質
+        const glassMaterial = new BABYLON.PBRMaterial(`${name}_glass`, this.scene);
+        glassMaterial.albedoColor = new BABYLON.Color3(1, 1, 1);
+        glassMaterial.metallic = 0.0;
+        glassMaterial.roughness = 0.01;
+        glassMaterial.alpha = 0.1;
+        glassMaterial.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+        glassMaterial.indexOfRefraction = 1.5;
+        glassMaterial.reflectivityColor = new BABYLON.Color3(1, 1, 1);
+        glassMaterial.microSurface = 0.98;
+
+        body.material = glassMaterial;
+        bottom.material = glassMaterial;
+
+        const glass = BABYLON.Mesh.MergeMeshes(
+            [body, bottom],
+            true,
+            true,
+            undefined,
+            false,
+            true
+        ) as BABYLON.Mesh;
+
+        glass.name = name;
+        glass.position = position;
+        glass.castShadow = true;
+
+        return glass;
+    }
+
+    /**
+     * 創建雞尾酒杯（Coupe Glass）
+     */
+    private createCoupeGlass(name: string, position: BABYLON.Vector3): BABYLON.Mesh {
+        // 杯口 - 淺碗狀
+        const bowl = BABYLON.MeshBuilder.CreateSphere(
+            `${name}_bowl`,
+            { diameter: 0.35, segments: 32, slice: 0.5 },
+            this.scene
+        );
+        bowl.position.y = 0.15;
+        bowl.scaling.y = 0.6; // 壓扁成淺碗
+
+        // 杯腳 - 細長
+        const stem = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_stem`,
+            { height: 0.25, diameter: 0.03, tessellation: 16 },
+            this.scene
+        );
+        stem.position.y = -0.125;
+
+        // 杯座
+        const base = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_base`,
+            { height: 0.03, diameterTop: 0.08, diameterBottom: 0.12, tessellation: 24 },
+            this.scene
+        );
+        base.position.y = -0.265;
+
+        // 高品質玻璃材質
+        const glassMaterial = new BABYLON.PBRMaterial(`${name}_glass`, this.scene);
+        glassMaterial.albedoColor = new BABYLON.Color3(1, 1, 1);
+        glassMaterial.metallic = 0.0;
+        glassMaterial.roughness = 0.015;
+        glassMaterial.alpha = 0.09;
+        glassMaterial.transparencyMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+        glassMaterial.indexOfRefraction = 1.52;
+        glassMaterial.reflectivityColor = new BABYLON.Color3(1, 1, 1);
+        glassMaterial.microSurface = 0.99;
+
+        bowl.material = glassMaterial;
+        stem.material = glassMaterial;
+        base.material = glassMaterial;
+
+        const glass = BABYLON.Mesh.MergeMeshes(
+            [bowl, stem, base],
+            true,
+            true,
+            undefined,
+            false,
+            true
+        ) as BABYLON.Mesh;
+
+        glass.name = name;
+        glass.position = position;
+        glass.castShadow = true;
+
+        return glass;
+    }
+
+    /**
+     * 創建調酒工具（程序化幾何體 + 高品質金屬材質）
+     */
+    private async createBarTools(): Promise<void> {
+        // Cobbler Shaker（經典三件式搖酒器）
+        const shaker = this.createCobblerShaker('shaker', new BABYLON.Vector3(-5, 1.2, -3));
+        this.barTools.shaker = shaker;
+        this.interaction.registerInteractable(shaker, ItemType.SHAKER);
+        this.physics.addCylinderBody(shaker, {
+            mass: 0.6,
+            restitution: 0.4,
+            friction: 0.5
+        });
+        this.cocktail.initContainer(shaker, 500);
+        console.log('✓ Created procedural Cobbler shaker');
+
+        // Jigger（雙端量酒器）
+        const jigger = this.createJigger('jigger', new BABYLON.Vector3(5, 1.2, -3));
         this.barTools.jigger = jigger;
-
-        // 註冊為可互動物品
         this.interaction.registerInteractable(jigger, ItemType.JIGGER);
-
-        // 添加物理
         this.physics.addCylinderBody(jigger, {
             mass: 0.2,
             restitution: 0.3,
             friction: 0.5
         });
+        console.log('✓ Created procedural jigger');
+    }
+
+    /**
+     * 創建經典三件式搖酒器（Cobbler Shaker）
+     */
+    private createCobblerShaker(name: string, position: BABYLON.Vector3): BABYLON.Mesh {
+        // 主體 - 底部容器
+        const body = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_body`,
+            {
+                height: 0.6,
+                diameterTop: 0.38,
+                diameterBottom: 0.4,
+                tessellation: 32
+            },
+            this.scene
+        );
+
+        // 上蓋 - 帶濾網的中間部分
+        const lid = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_lid`,
+            {
+                height: 0.12,
+                diameterTop: 0.36,
+                diameterBottom: 0.38,
+                tessellation: 32
+            },
+            this.scene
+        );
+        lid.position.y = 0.36;
+
+        // 頂蓋 - 小頂部
+        const cap = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_cap`,
+            {
+                height: 0.08,
+                diameterTop: 0.15,
+                diameterBottom: 0.36,
+                tessellation: 32
+            },
+            this.scene
+        );
+        cap.position.y = 0.46;
+
+        // 頂部旋鈕
+        const knob = BABYLON.MeshBuilder.CreateSphere(
+            `${name}_knob`,
+            { diameter: 0.08, segments: 16 },
+            this.scene
+        );
+        knob.position.y = 0.54;
+        knob.scaling.y = 0.7; // 壓扁一點
+
+        // 高品質拋光不鏽鋼材質
+        const metalMaterial = new BABYLON.PBRMaterial(`${name}_metal`, this.scene);
+        metalMaterial.albedoColor = new BABYLON.Color3(0.88, 0.88, 0.9);
+        metalMaterial.metallic = 1.0; // 完全金屬
+        metalMaterial.roughness = 0.15; // 高度拋光
+        metalMaterial.environmentIntensity = 1.5;
+        metalMaterial.reflectivityColor = new BABYLON.Color3(0.95, 0.95, 0.97);
+        metalMaterial.microSurface = 0.95;
+        // 添加清晰的金屬反射
+        metalMaterial.clearCoat.isEnabled = true;
+        metalMaterial.clearCoat.intensity = 0.3;
+
+        // 應用材質
+        body.material = metalMaterial;
+        lid.material = metalMaterial;
+        cap.material = metalMaterial;
+        knob.material = metalMaterial;
+
+        // 合併為一個網格
+        const shaker = BABYLON.Mesh.MergeMeshes(
+            [body, lid, cap, knob],
+            true,
+            true,
+            undefined,
+            false,
+            true
+        ) as BABYLON.Mesh;
+
+        shaker.name = name;
+        shaker.position = position;
+        shaker.castShadow = true;
+
+        return shaker;
+    }
+
+    /**
+     * 創建雙端量酒器（Jigger）
+     */
+    private createJigger(name: string, position: BABYLON.Vector3): BABYLON.Mesh {
+        // 大端（50ml）
+        const largeCup = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_large`,
+            {
+                height: 0.12,
+                diameterTop: 0.2,
+                diameterBottom: 0.15,
+                tessellation: 24
+            },
+            this.scene
+        );
+        largeCup.position.y = 0.06;
+
+        // 小端（25ml）
+        const smallCup = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_small`,
+            {
+                height: 0.08,
+                diameterTop: 0.15,
+                diameterBottom: 0.12,
+                tessellation: 24
+            },
+            this.scene
+        );
+        smallCup.position.y = -0.04;
+
+        // 中央連接部分
+        const connector = BABYLON.MeshBuilder.CreateCylinder(
+            `${name}_connector`,
+            {
+                height: 0.02,
+                diameter: 0.12,
+                tessellation: 20
+            },
+            this.scene
+        );
+
+        // 拋光不鏽鋼材質
+        const metalMaterial = new BABYLON.PBRMaterial(`${name}_metal`, this.scene);
+        metalMaterial.albedoColor = new BABYLON.Color3(0.9, 0.9, 0.92);
+        metalMaterial.metallic = 1.0;
+        metalMaterial.roughness = 0.18;
+        metalMaterial.environmentIntensity = 1.4;
+        metalMaterial.reflectivityColor = new BABYLON.Color3(0.95, 0.95, 0.97);
+        metalMaterial.microSurface = 0.93;
+
+        largeCup.material = metalMaterial;
+        smallCup.material = metalMaterial;
+        connector.material = metalMaterial;
+
+        // 合併為一個網格
+        const jigger = BABYLON.Mesh.MergeMeshes(
+            [largeCup, smallCup, connector],
+            true,
+            true,
+            undefined,
+            false,
+            true
+        ) as BABYLON.Mesh;
+
+        jigger.name = name;
+        jigger.position = position;
+        jigger.castShadow = true;
+
+        return jigger;
     }
 
     /**

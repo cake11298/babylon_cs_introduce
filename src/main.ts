@@ -91,8 +91,8 @@ class BarSimulator {
         );
         camera.setTarget(BABYLON.Vector3.Zero());
 
-        // 設置更廣角的視野（FOV）- 從默認的45度提升到85度
-        camera.fov = 1.48; // 約85度（弧度制）
+        // 設置視野（FOV）- 降低5%以防止近距離穿模並提供更電影化的視角
+        camera.fov = 1.406; // 約80.7度（弧度制），從原本的1.48降低5%
 
         // 設置相機為活動相機
         scene.activeCamera = camera;

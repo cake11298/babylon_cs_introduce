@@ -10,8 +10,8 @@ export default class PlayerController {
     private canvas: HTMLCanvasElement;
 
     // 移動速度和靈敏度
-    private readonly MOVE_SPEED = 0.15;
-    private readonly SPRINT_SPEED = 0.3;
+    private readonly MOVE_SPEED = 0.165; // 提高10%以改善遊戲節奏
+    private readonly SPRINT_SPEED = 0.33; // 提高10%以改善遊戲節奏
     private readonly MOUSE_SENSITIVITY = 0.08; // 提高20倍靈敏度（從0.004到0.08）
 
     // 鍵盤狀態
