@@ -65,16 +65,18 @@ export default class ModelLoader {
             if (config.scale) {
                 rootMesh.scaling = config.scale;
             } else {
-                // 默认缩放以适应场景
-                rootMesh.scaling = new BABYLON.Vector3(0.01, 0.01, 0.01);
+                // GLB 使用米為單位，保持原始比例（不縮放）
+                // FBX 可能使用厘米，但讓調用者明確指定縮放
+                rootMesh.scaling = new BABYLON.Vector3(1, 1, 1);
             }
 
-            // ===== 材質處理：保留 GLB 嵌入的 PBR 材質 =====
-            // GLB 檔案已經包含完整的 PBR 材質和貼圖，不需要手動覆蓋
-            // 只有 FBX 可能需要外部貼圖
-            if (config.texturePath && fileExtension === 'fbx') {
-                this.applyTexture(result.meshes, config.texturePath);
-            }
+            // ===== 材質處理：完全保留模型嵌入的 PBR 材質 =====
+            // GLB 和 FBX 檔案已經包含完整的材質和貼圖
+            // 不需要手動覆蓋，讓 Babylon.js 的默認加載器處理
+            // 注释：不再手動應用外部貼圖，以避免破壞 PBR 材質
+            // if (config.texturePath && fileExtension === 'fbx') {
+            //     this.applyTexture(result.meshes, config.texturePath);
+            // }
 
             // ===== 射線檢測優化：預設禁用所有網格的 isPickable =====
             // 這樣可以避免對高多邊形模型進行昂貴的射線檢測

@@ -59,7 +59,14 @@ export default class LightingSystem {
         barSpotlight.diffuse = new BABYLON.Color3(1.0, 0.8, 0.5); // 溫暖的吧檯燈光
         barSpotlight.specular = new BABYLON.Color3(0.8, 0.7, 0.5);
 
-        console.log('✓ 昏暗酒吧光照系統已設置');
+        // === PBR 環境光照（Image-Based Lighting）===
+        // 這對於 GLB 模型的 PBR 材質至關重要，讓金屬和玻璃材質正確反射光線
+        this.scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
+            "https://assets.babylonjs.com/environments/environmentSpecular.env",
+            this.scene
+        );
+
+        console.log('✓ 昏暗酒吧光照系統已設置（含 PBR 環境光照）');
     }
 
     /**

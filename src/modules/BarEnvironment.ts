@@ -273,8 +273,8 @@ export default class BarEnvironment {
                 const visualMesh = await this.modelLoader.loadModel({
                     name: `${config.name}_visual`,
                     modelPath: config.modelPath,
-                    position: BABYLON.Vector3.Zero(), // 相對位置，因為會被父級化
-                    scale: new BABYLON.Vector3(0.01, 0.01, 0.01)
+                    position: BABYLON.Vector3.Zero(), // 相對位置,因為會被父級化
+                    scale: new BABYLON.Vector3(1, 1, 1) // GLB 使用米為單位，不需要縮放
                 });
 
                 visualMesh.castShadow = true;
@@ -484,7 +484,7 @@ export default class BarEnvironment {
                 name: 'shaker_visual',
                 modelPath: '/materials/Stainless_Steel_Cockt_1208143655_texture.glb',
                 position: BABYLON.Vector3.Zero(),
-                scale: new BABYLON.Vector3(0.01, 0.01, 0.01)
+                scale: new BABYLON.Vector3(1, 1, 1) // GLB 使用米為單位，不需要縮放
             });
 
             shakerVisual.castShadow = true;
