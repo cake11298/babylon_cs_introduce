@@ -1177,6 +1177,83 @@ export default class BarEnvironment {
             leg.material = stoolMaterial;
             leg.castShadow = true;
         });
+
+        // ===== 測試用：在桌面上添加一個簡單的圓柱體酒瓶 =====
+        this.createTestBottleOnTable();
+    }
+
+    /**
+     * 創建測試用圓柱體酒瓶（放在桌面上）
+     */
+    private createTestBottleOnTable(): void {
+        const bottleHeight = 0.25;
+        const bottleRadius = 0.05;
+
+        // 創建瓶身（圓柱體）
+        const bottle = BABYLON.MeshBuilder.CreateCylinder(
+            'testBottle',
+            {
+                height: bottleHeight,
+                diameterTop: bottleRadius * 2,
+                diameterBottom: bottleRadius * 2,
+                tessellation: 12
+            },
+            this.scene
+        );
+
+        // 放在桌面上（桌子位置是 (0, 0.75, 3)，桌面高度 0.1）
+        bottle.position = new BABYLON.Vector3(0, 0.75 + 0.05 + bottleHeight / 2, 3);
+
+        // 創建簡單的玻璃材質
+        const glassMat = new BABYLON.PBRMaterial('testBottleGlass', this.scene);
+        glassMat.metallic = 0.0;
+        glassMat.roughness = 0.05;
+        glassMat.alpha = 0.15;
+        glassMat.indexOfRefraction = 1.5;
+        glassMat.subSurface.isTranslucencyEnabled = true;
+        glassMat.subSurface.translucencyIntensity = 0.8;
+        bottle.material = glassMat;
+
+        // 創建液體（伏特加 - 透明）
+        const liquid = BABYLON.MeshBuilder.CreateCylinder(
+            'testBottleLiquid',
+            {
+                height: bottleHeight * 0.7,
+                diameter: bottleRadius * 1.8,
+                tessellation: 12
+            },
+            this.scene
+        );
+        liquid.parent = bottle;
+        liquid.position.y = -bottleHeight * 0.15;
+
+        const liquidMat = new BABYLON.PBRMaterial('testLiquidMat', this.scene);
+        liquidMat.albedoColor = new BABYLON.Color3(0.95, 0.95, 0.95); // 伏特加顏色
+        liquidMat.metallic = 0.0;
+        liquidMat.roughness = 0.1;
+        liquidMat.alpha = 0.5;
+        liquidMat.subSurface.isTranslucencyEnabled = true;
+        liquidMat.subSurface.translucencyIntensity = 0.9;
+        liquid.material = liquidMat;
+
+        // 啟用陰影
+        bottle.castShadow = true;
+
+        // 添加物理（動態物體）
+        this.physics.addCylinderPhysics(bottle, 0.3); // 質量 0.3kg
+
+        // 註冊為可互動物品（酒瓶）
+        this.interaction.registerInteractable(
+            bottle,
+            'bottle' as any,
+            'vodka', // 伏特加類型
+            500 // 容量 500ml
+        );
+
+        // 初始化容器內容（伏特加）
+        this.cocktailSystem.initializeContainer(bottle, 'vodka', 500, 500);
+
+        console.log('✅ 測試用圓柱體酒瓶已添加到桌面 (位置: 0, 0.8, 3)');
     }
 
     /**

@@ -46,8 +46,8 @@ export default class InteractionSystem {
         // 創建手持物品的父節點（附加到相機）
         this.holdParent = new BABYLON.TransformNode('holdParent', scene);
         this.holdParent.parent = camera;
-        // 調整為更合理的手持位置：右下前方
-        this.holdOffset = new BABYLON.Vector3(0.4, -0.5, 1.2);
+        // 調整為更合理的手持位置：右下前方，更靠近玩家
+        this.holdOffset = new BABYLON.Vector3(0.45, -0.65, 0.85);
 
         // 創建高亮圖層
         this.highlightLayer = new BABYLON.HighlightLayer('highlight', scene);
@@ -269,17 +269,42 @@ export default class InteractionSystem {
             const type = this.targetedObject.userData.type;
             let hintText = '按 E 拾取';
 
+            // NPC 互動
             if (type === ItemType.NPC) {
                 hintText = '按 E 對話';
-            } else if (type === ItemType.GUITAR) {
+            }
+            // 吉他
+            else if (type === ItemType.GUITAR) {
                 hintText = '按 E 演奏';
-            } else if (this.cocktailSystem && this.targetedObject.userData.liquorType) {
+            }
+            // 酒瓶（顯示酒名）
+            else if (this.cocktailSystem && this.targetedObject.userData.liquorType) {
                 const liquorData = this.cocktailSystem.getLiquorData(
                     this.targetedObject.userData.liquorType
                 );
                 if (liquorData) {
-                    hintText = `${liquorData.displayName} - 按 E 拾取`;
+                    hintText = `${liquorData.displayName} (${liquorData.name}) - 按 E 拾取`;
                 }
+            }
+            // 杯子
+            else if (type === ItemType.GLASS) {
+                hintText = '杯子 (Glass) - 按 E 拾取';
+            }
+            // Shaker
+            else if (type === ItemType.SHAKER) {
+                hintText = 'Shaker (搖酒器) - 按 E 拾取';
+            }
+            // Jigger
+            else if (type === ItemType.JIGGER) {
+                hintText = 'Jigger (量酒器) - 按 E 拾取';
+            }
+            // Mixing Glass
+            else if (type === ItemType.MIXING_GLASS) {
+                hintText = 'Mixing Glass (調酒杯) - 按 E 拾取';
+            }
+            // 其他物品
+            else {
+                hintText = `${type} - 按 E 拾取`;
             }
 
             hintElement.textContent = hintText;
