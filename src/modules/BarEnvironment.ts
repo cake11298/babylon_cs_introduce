@@ -1240,7 +1240,11 @@ export default class BarEnvironment {
         bottle.castShadow = true;
 
         // 添加物理（動態物體）
-        this.physics.addCylinderPhysics(bottle, 0.3); // 質量 0.3kg
+        this.physics.addCylinderBody(bottle, {
+            mass: 0.3,
+            restitution: 0.3,
+            friction: 0.6
+        });
 
         // 註冊為可互動物品（酒瓶）
         this.interaction.registerInteractable(
