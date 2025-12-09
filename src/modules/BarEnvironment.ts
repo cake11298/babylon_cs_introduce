@@ -49,38 +49,40 @@ export default class BarEnvironment {
      * 創建地板和牆壁（現代奢華風格PBR材質）
      */
     private createFloorAndWalls(): void {
-        // 地板 - 高級深色拋光硬木/石材（奢華風格）
+        // 地板 - 粗糙深色硬木/石材（磨砂質感）
         const floor = BABYLON.MeshBuilder.CreateGround(
             'floor',
             { width: 30, height: 30 },
             this.scene
         );
         const floorMaterial = new BABYLON.PBRMaterial('floorMat', this.scene);
-        floorMaterial.albedoColor = new BABYLON.Color3(0.12, 0.10, 0.08); // 深色高級硬木
+        floorMaterial.albedoColor = new BABYLON.Color3(0.12, 0.10, 0.08); // 深色硬木
         floorMaterial.metallic = 0.0;
-        floorMaterial.roughness = 0.15; // 低粗糙度 = 拋光效果
-        floorMaterial.environmentIntensity = 0.8; // 提升環境反射
-        // 添加拋光硬木的細微反射
-        floorMaterial.reflectivityColor = new BABYLON.Color3(0.15, 0.13, 0.11);
-        floorMaterial.microSurface = 0.9; // 光滑表面
-        // 添加清漆層（高級拋光硬木）
-        floorMaterial.clearCoat.isEnabled = true;
-        floorMaterial.clearCoat.intensity = 0.4;
-        floorMaterial.clearCoat.roughness = 0.1;
+        floorMaterial.roughness = 0.85; // 高粗糙度 = 磨砂/粗糙效果
+        floorMaterial.environmentIntensity = 0.3; // 降低環境反射
+        // 移除反射效果
+        floorMaterial.reflectivityColor = new BABYLON.Color3(0.05, 0.05, 0.05);
+        floorMaterial.microSurface = 0.4; // 粗糙表面
+        // 禁用清漆層（不需要光澤）
+        floorMaterial.clearCoat.isEnabled = false;
         floor.material = floorMaterial;
         floor.receiveShadows = true;
         floor.checkCollisions = true;
         this.physics.addStaticBoxCollider(floor);
 
-        // 牆壁材質 - 現代深色美學牆面（板岩/深色灰泥）
+        // 牆壁材質 - 高光澤牆面（拋光板岩/光澤塗料）
         const wallMaterial = new BABYLON.PBRMaterial('wallMat', this.scene);
-        wallMaterial.albedoColor = new BABYLON.Color3(0.18, 0.18, 0.19); // 深灰色板岩/灰泥
+        wallMaterial.albedoColor = new BABYLON.Color3(0.18, 0.18, 0.19); // 深灰色拋光板岩
         wallMaterial.metallic = 0.0;
-        wallMaterial.roughness = 0.65; // 中等粗糙度（帶紋理的牆面）
-        wallMaterial.environmentIntensity = 0.5;
-        // 添加牆壁的細微反射
-        wallMaterial.reflectivityColor = new BABYLON.Color3(0.12, 0.12, 0.13);
-        wallMaterial.microSurface = 0.6;
+        wallMaterial.roughness = 0.15; // 低粗糙度 = 高光澤/反射效果
+        wallMaterial.environmentIntensity = 1.2; // 增強環境反射
+        // 添加牆壁的強烈反射
+        wallMaterial.reflectivityColor = new BABYLON.Color3(0.3, 0.3, 0.32);
+        wallMaterial.microSurface = 0.92; // 光滑表面
+        // 啟用清漆層（高光澤效果）
+        wallMaterial.clearCoat.isEnabled = true;
+        wallMaterial.clearCoat.intensity = 0.5;
+        wallMaterial.clearCoat.roughness = 0.1;
 
         // 後牆 - 封閉房間
         const backWall = BABYLON.MeshBuilder.CreateBox(
@@ -163,15 +165,13 @@ export default class BarEnvironment {
         const counterMaterial = new BABYLON.PBRMaterial('counterMat', this.scene);
         counterMaterial.albedoColor = new BABYLON.Color3(0.95, 0.95, 0.95); // 白色/淺灰大理石
         counterMaterial.metallic = 0.0; // 大理石非金屬
-        counterMaterial.roughness = 0.05; // 極低粗糙度 = 高光澤反射
-        counterMaterial.environmentIntensity = 1.2; // 增強環境反射
-        // 大理石的銳利反射
-        counterMaterial.reflectivityColor = new BABYLON.Color3(0.9, 0.9, 0.9);
-        counterMaterial.microSurface = 0.98; // 極光滑表面
-        // 添加高光澤層（拋光效果）
-        counterMaterial.clearCoat.isEnabled = true;
-        counterMaterial.clearCoat.intensity = 0.6;
-        counterMaterial.clearCoat.roughness = 0.05; // 極低粗糙度
+        counterMaterial.roughness = 0.45; // 中等粗糙度 = 磨砂/半啞光效果
+        counterMaterial.environmentIntensity = 0.6; // 降低環境反射
+        // 降低反射強度，使玻璃物品更清晰可見
+        counterMaterial.reflectivityColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+        counterMaterial.microSurface = 0.65; // 稍微粗糙的表面
+        // 禁用清漆層（啞光效果）
+        counterMaterial.clearCoat.isEnabled = false;
         counter.material = counterMaterial;
         counter.receiveShadows = true;
         counter.checkCollisions = true;
@@ -342,7 +342,7 @@ export default class BarEnvironment {
         // 瓶頸 - 圓柱形
         const neck = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_neck`,
-            { height: 0.18, diameterTop: 0.08, diameterBottom: 0.12, tessellation: 16 },
+            { height: 0.18, diameterTop: 0.08, diameterBottom: 0.12, tessellation: 8 },
             this.scene
         );
         neck.position.y = 0.44;
@@ -350,7 +350,7 @@ export default class BarEnvironment {
         // 瓶蓋 - 金屬蓋
         const cap = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_cap`,
-            { height: 0.06, diameter: 0.1, tessellation: 16 },
+            { height: 0.06, diameter: 0.1, tessellation: 8 },
             this.scene
         );
         cap.position.y = 0.56;
@@ -421,18 +421,18 @@ export default class BarEnvironment {
         position: BABYLON.Vector3,
         liquidColor: BABYLON.Color3
     ): BABYLON.Mesh {
-        // 瓶身 - 高瘦圓柱 (優化: tessellation降至16)
+        // 瓶身 - 高瘦圓柱 (優化: tessellation降至8)
         const body = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_body`,
-            { height: 0.85, diameter: 0.22, tessellation: 16 },
+            { height: 0.85, diameter: 0.22, tessellation: 8 },
             this.scene
         );
         body.forceSharedVertices(); // 強制共享頂點以實現平滑著色
 
-        // 瓶頸 - 細長 (優化: tessellation降至16)
+        // 瓶頸 - 細長 (優化: tessellation降至8)
         const neck = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_neck`,
-            { height: 0.15, diameterTop: 0.06, diameterBottom: 0.11, tessellation: 16 },
+            { height: 0.15, diameterTop: 0.06, diameterBottom: 0.11, tessellation: 8 },
             this.scene
         );
         neck.position.y = 0.5;
@@ -441,16 +441,16 @@ export default class BarEnvironment {
         // 瓶蓋
         const cap = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_cap`,
-            { height: 0.05, diameter: 0.08, tessellation: 16 },
+            { height: 0.05, diameter: 0.08, tessellation: 8 },
             this.scene
         );
         cap.position.y = 0.6;
         cap.forceSharedVertices();
 
-        // 液體 (優化: tessellation降至16)
+        // 液體 (優化: tessellation降至8)
         const liquid = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_liquid`,
-            { height: 0.72, diameter: 0.2, tessellation: 16 },
+            { height: 0.72, diameter: 0.2, tessellation: 8 },
             this.scene
         );
         liquid.position.y = -0.065;
@@ -512,27 +512,27 @@ export default class BarEnvironment {
         position: BABYLON.Vector3,
         liquidColor: BABYLON.Color3
     ): BABYLON.Mesh {
-        // 瓶身 - 標準圓柱 (優化: tessellation降至16)
+        // 瓶身 - 標準圓柱 (優化: tessellation降至8)
         const body = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_body`,
-            { height: 0.75, diameter: 0.28, tessellation: 16 },
+            { height: 0.75, diameter: 0.28, tessellation: 8 },
             this.scene
         );
         body.forceSharedVertices();
 
-        // 瓶肩 - 漸變過渡 (優化: tessellation降至16)
+        // 瓶肩 - 漸變過渡 (優化: tessellation降至8)
         const shoulder = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_shoulder`,
-            { height: 0.12, diameterTop: 0.14, diameterBottom: 0.28, tessellation: 16 },
+            { height: 0.12, diameterTop: 0.14, diameterBottom: 0.28, tessellation: 8 },
             this.scene
         );
         shoulder.position.y = 0.435;
         shoulder.forceSharedVertices();
 
-        // 瓶頸 (優化: tessellation降至16)
+        // 瓶頸 (優化: tessellation降至8)
         const neck = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_neck`,
-            { height: 0.14, diameterTop: 0.07, diameterBottom: 0.14, tessellation: 16 },
+            { height: 0.14, diameterTop: 0.07, diameterBottom: 0.14, tessellation: 8 },
             this.scene
         );
         neck.position.y = 0.565;
@@ -541,16 +541,16 @@ export default class BarEnvironment {
         // 瓶蓋
         const cap = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_cap`,
-            { height: 0.06, diameter: 0.09, tessellation: 16 },
+            { height: 0.06, diameter: 0.09, tessellation: 8 },
             this.scene
         );
         cap.position.y = 0.67;
         cap.forceSharedVertices();
 
-        // 液體 (優化: tessellation降至16)
+        // 液體 (優化: tessellation降至8)
         const liquid = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_liquid`,
-            { height: 0.65, diameter: 0.26, tessellation: 16 },
+            { height: 0.65, diameter: 0.26, tessellation: 8 },
             this.scene
         );
         liquid.position.y = -0.05;
@@ -613,27 +613,27 @@ export default class BarEnvironment {
         position: BABYLON.Vector3,
         liquidColor: BABYLON.Color3
     ): BABYLON.Mesh {
-        // 瓶身 - 寬矮圓柱 (優化: tessellation降至16)
+        // 瓶身 - 寬矮圓柱 (優化: tessellation降至8)
         const body = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_body`,
-            { height: 0.6, diameter: 0.35, tessellation: 16 },
+            { height: 0.6, diameter: 0.35, tessellation: 8 },
             this.scene
         );
         body.forceSharedVertices();
 
-        // 瓶肩 - 寬到窄 (優化: tessellation降至16)
+        // 瓶肩 - 寬到窄 (優化: tessellation降至8)
         const shoulder = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_shoulder`,
-            { height: 0.15, diameterTop: 0.15, diameterBottom: 0.35, tessellation: 16 },
+            { height: 0.15, diameterTop: 0.15, diameterBottom: 0.35, tessellation: 8 },
             this.scene
         );
         shoulder.position.y = 0.375;
         shoulder.forceSharedVertices();
 
-        // 瓶頸 (優化: tessellation降至16)
+        // 瓶頸 (優化: tessellation降至8)
         const neck = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_neck`,
-            { height: 0.12, diameterTop: 0.08, diameterBottom: 0.15, tessellation: 16 },
+            { height: 0.12, diameterTop: 0.08, diameterBottom: 0.15, tessellation: 8 },
             this.scene
         );
         neck.position.y = 0.51;
@@ -642,16 +642,16 @@ export default class BarEnvironment {
         // 瓶蓋
         const cap = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_cap`,
-            { height: 0.05, diameter: 0.1, tessellation: 16 },
+            { height: 0.05, diameter: 0.1, tessellation: 8 },
             this.scene
         );
         cap.position.y = 0.6;
         cap.forceSharedVertices();
 
-        // 液體 (優化: tessellation降至16)
+        // 液體 (優化: tessellation降至8)
         const liquid = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_liquid`,
-            { height: 0.52, diameter: 0.33, tessellation: 16 },
+            { height: 0.52, diameter: 0.33, tessellation: 8 },
             this.scene
         );
         liquid.position.y = -0.04;
@@ -753,25 +753,25 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建高球杯（Highball Glass）
+     * 創建高球杯（Highball Glass）- 簡化為空心圓柱
      */
     private createHighballGlass(name: string, position: BABYLON.Vector3): BABYLON.Mesh {
-        // 杯身 - 高直筒
+        // 杯身 - 高直筒（簡化：降低tessellation到8）
         const body = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_body`,
             {
                 height: 0.55,
                 diameterTop: 0.28,
                 diameterBottom: 0.27,
-                tessellation: 32
+                tessellation: 8
             },
             this.scene
         );
 
-        // 杯底 - 厚實的玻璃底
+        // 杯底 - 厚實的玻璃底（簡化：降低tessellation到8）
         const bottom = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_bottom`,
-            { height: 0.05, diameter: 0.27, tessellation: 32 },
+            { height: 0.05, diameter: 0.27, tessellation: 8 },
             this.scene
         );
         bottom.position.y = -0.3;
@@ -807,25 +807,25 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建威士忌杯（Rocks/Old Fashioned Glass）
+     * 創建威士忌杯（Rocks/Old Fashioned Glass）- 簡化為空心圓柱
      */
     private createRocksGlass(name: string, position: BABYLON.Vector3): BABYLON.Mesh {
-        // 杯身 - 矮寬
+        // 杯身 - 矮寬（簡化：降低tessellation到8）
         const body = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_body`,
             {
                 height: 0.4,
                 diameterTop: 0.32,
                 diameterBottom: 0.28,
-                tessellation: 32
+                tessellation: 8
             },
             this.scene
         );
 
-        // 杯底
+        // 杯底（簡化：降低tessellation到8）
         const bottom = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_bottom`,
-            { height: 0.08, diameter: 0.28, tessellation: 32 },
+            { height: 0.08, diameter: 0.28, tessellation: 8 },
             this.scene
         );
         bottom.position.y = -0.24;
@@ -861,30 +861,29 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建雞尾酒杯（Coupe Glass）
+     * 創建雞尾酒杯（Coupe Glass）- 簡化為高球杯樣式
      */
     private createCoupeGlass(name: string, position: BABYLON.Vector3): BABYLON.Mesh {
-        // 杯口 - 淺碗狀
-        const bowl = BABYLON.MeshBuilder.CreateSphere(
+        // 簡化為高球杯樣式，以提升性能（簡化：降低tessellation到8）
+        const bowl = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_bowl`,
-            { diameter: 0.35, segments: 32, slice: 0.5 },
+            { height: 0.45, diameterTop: 0.28, diameterBottom: 0.27, tessellation: 8 },
             this.scene
         );
         bowl.position.y = 0.15;
-        bowl.scaling.y = 0.6; // 壓扁成淺碗
 
-        // 杯腳 - 細長
+        // 杯腳 - 細長（簡化：降低tessellation到8）
         const stem = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_stem`,
-            { height: 0.25, diameter: 0.03, tessellation: 16 },
+            { height: 0.25, diameter: 0.03, tessellation: 8 },
             this.scene
         );
         stem.position.y = -0.125;
 
-        // 杯座
+        // 杯座（簡化：降低tessellation到8）
         const base = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_base`,
-            { height: 0.03, diameterTop: 0.08, diameterBottom: 0.12, tessellation: 24 },
+            { height: 0.03, diameterTop: 0.08, diameterBottom: 0.12, tessellation: 8 },
             this.scene
         );
         base.position.y = -0.265;
@@ -949,51 +948,51 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建經典三件式搖酒器（Cobbler Shaker）
+     * 創建經典三件式搖酒器（Cobbler Shaker）- 性能優化版
      */
     private createCobblerShaker(name: string, position: BABYLON.Vector3): BABYLON.Mesh {
-        // 主體 - 底部容器
+        // 主體 - 底部容器（簡化：降低tessellation到8）
         const body = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_body`,
             {
                 height: 0.6,
                 diameterTop: 0.38,
                 diameterBottom: 0.4,
-                tessellation: 32
+                tessellation: 8
             },
             this.scene
         );
 
-        // 上蓋 - 帶濾網的中間部分
+        // 上蓋 - 帶濾網的中間部分（簡化：降低tessellation到8）
         const lid = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_lid`,
             {
                 height: 0.12,
                 diameterTop: 0.36,
                 diameterBottom: 0.38,
-                tessellation: 32
+                tessellation: 8
             },
             this.scene
         );
         lid.position.y = 0.36;
 
-        // 頂蓋 - 小頂部
+        // 頂蓋 - 小頂部（簡化：降低tessellation到8）
         const cap = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_cap`,
             {
                 height: 0.08,
                 diameterTop: 0.15,
                 diameterBottom: 0.36,
-                tessellation: 32
+                tessellation: 8
             },
             this.scene
         );
         cap.position.y = 0.46;
 
-        // 頂部旋鈕
+        // 頂部旋鈕（簡化：降低segments到8）
         const knob = BABYLON.MeshBuilder.CreateSphere(
             `${name}_knob`,
-            { diameter: 0.08, segments: 16 },
+            { diameter: 0.08, segments: 8 },
             this.scene
         );
         knob.position.y = 0.54;
@@ -1035,42 +1034,42 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建雙端量酒器（Jigger）
+     * 創建雙端量酒器（Jigger）- 改進的雙錐形設計
      */
     private createJigger(name: string, position: BABYLON.Vector3): BABYLON.Mesh {
-        // 大端（50ml）
+        // 大端（50ml）- 使用錐形（簡化：降低tessellation到8）
         const largeCup = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_large`,
             {
                 height: 0.12,
                 diameterTop: 0.2,
-                diameterBottom: 0.15,
-                tessellation: 24
+                diameterBottom: 0.08,
+                tessellation: 8
             },
             this.scene
         );
         largeCup.position.y = 0.06;
 
-        // 小端（25ml）
+        // 小端（25ml）- 使用錐形（簡化：降低tessellation到8）
         const smallCup = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_small`,
             {
                 height: 0.08,
                 diameterTop: 0.15,
-                diameterBottom: 0.12,
-                tessellation: 24
+                diameterBottom: 0.08,
+                tessellation: 8
             },
             this.scene
         );
         smallCup.position.y = -0.04;
 
-        // 中央連接部分
+        // 中央連接環（簡化：降低tessellation到8）
         const connector = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_connector`,
             {
                 height: 0.02,
-                diameter: 0.12,
-                tessellation: 20
+                diameter: 0.08,
+                tessellation: 8
             },
             this.scene
         );
@@ -1120,10 +1119,10 @@ export default class BarEnvironment {
         tableMaterial.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
 
         tablePositions.forEach((position, index) => {
-            // 桌面（优化：降低多边形数量）
+            // 桌面（性能優化：降低到6邊形）
             const tableTop = BABYLON.MeshBuilder.CreateCylinder(
                 `tableTop_${index}`,
-                { height: 0.1, diameter: 1.2, tessellation: 12 },
+                { height: 0.1, diameter: 1.2, tessellation: 6 },
                 this.scene
             );
             tableTop.position = new BABYLON.Vector3(position.x, 0.75, position.z);
@@ -1135,10 +1134,10 @@ export default class BarEnvironment {
 
             this.physics.addStaticBoxCollider(tableTop);
 
-            // 桌腿（优化：降低多边形数量）
+            // 桌腿（性能優化：降低到6邊形）
             const tableLeg = BABYLON.MeshBuilder.CreateCylinder(
                 `tableLeg_${index}`,
-                { height: 0.7, diameter: 0.1, tessellation: 8 },
+                { height: 0.7, diameter: 0.1, tessellation: 6 },
                 this.scene
             );
             tableLeg.position = new BABYLON.Vector3(position.x, 0.35, position.z);
@@ -1158,20 +1157,20 @@ export default class BarEnvironment {
         stoolMaterial.specularColor = new BABYLON.Color3(0.15, 0.15, 0.15);
 
         stoolPositions.forEach((position, index) => {
-            // 椅座（优化：降低多边形数量）
+            // 椅座（性能優化：降低到6邊形）
             const seat = BABYLON.MeshBuilder.CreateCylinder(
                 `stoolSeat_${index}`,
-                { height: 0.08, diameter: 0.4, tessellation: 12 },
+                { height: 0.08, diameter: 0.4, tessellation: 6 },
                 this.scene
             );
             seat.position = new BABYLON.Vector3(position.x, 0.65, position.z);
             seat.material = stoolMaterial;
             seat.receiveShadows = true;
 
-            // 椅腿（优化：降低多边形数量）
+            // 椅腿（性能優化：降低到6邊形）
             const leg = BABYLON.MeshBuilder.CreateCylinder(
                 `stoolLeg_${index}`,
-                { height: 0.6, diameter: 0.06, tessellation: 8 },
+                { height: 0.6, diameter: 0.06, tessellation: 6 },
                 this.scene
             );
             leg.position = new BABYLON.Vector3(position.x, 0.3, position.z);
