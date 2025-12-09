@@ -1254,6 +1254,13 @@ export default class CocktailSystem {
     }
 
     /**
+     * 獲取單一酒類資料
+     */
+    public getLiquorData(liquorType: string): LiquorData | undefined {
+        return this.liquorDatabase.get(liquorType);
+    }
+
+    /**
      * 獲取經典調酒食譜列表
      */
     public getCocktailRecipes() {

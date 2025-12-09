@@ -91,8 +91,8 @@ class BarSimulator {
         );
         camera.setTarget(BABYLON.Vector3.Zero());
 
-        // 設置視野（FOV）- 降低5%以防止近距離穿模並提供更電影化的視角
-        camera.fov = 1.406; // 約80.7度（弧度制），從原本的1.48降低5%
+        // 設置視野（FOV）- 降低10%以防止近距離穿模並提供更電影化的視角
+        camera.fov = 1.2654; // 約72.5度（弧度制），從原本的1.406降低10%
 
         // 設置相機為活動相機
         scene.activeCamera = camera;
@@ -262,12 +262,30 @@ class BarSimulator {
             return;
         }
 
+        // 獲取 deltaTime
+        const deltaTime = this.engine.getDeltaTime() / 1000;
+
         // 檢查附近是否有容器
         const targetContainer = this.findNearbyContainer();
 
         if (targetContainer) {
             // 倒酒到容器
-            this.cocktailSystem.pour(heldObject, targetContainer);
+            const heldObjectType = heldObject.userData.type;
+            const liquorType = heldObject.userData.liquorType;
+
+            if (heldObjectType === 'bottle' && liquorType) {
+                // 從酒瓶倒酒
+                this.cocktailSystem.pour(
+                    heldObject,
+                    targetContainer,
+                    liquorType,
+                    deltaTime,
+                    this.camera
+                );
+            } else if (heldObjectType === 'shaker') {
+                // 從 Shaker 倒酒
+                this.cocktailSystem.pourFromShaker(heldObject, targetContainer, deltaTime);
+            }
         } else if (heldObject.userData.type === 'shaker') {
             // 搖酒
             this.cocktailSystem.shake(heldObject);
