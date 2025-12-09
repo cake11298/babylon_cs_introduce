@@ -15,19 +15,19 @@ export default class LightingSystem {
     }
 
     /**
-     * 設置光源（昏暗酒吧氛圍）
+     * 設置光源（現代奢華酒吧氛圍 - 提升亮度突顯大理石反射）
      */
     private setupLights(): void {
-        // === 主光源：昏暗的暖色燈光 ===
+        // === 主光源：中性白光（突顯大理石） ===
         const mainLight = new BABYLON.DirectionalLight(
             'mainLight',
             new BABYLON.Vector3(-1, -2, -1),
             this.scene
         );
         mainLight.position = new BABYLON.Vector3(20, 40, 20);
-        mainLight.intensity = 0.5; // 大幅降低強度，打造昏暗氛圍
-        mainLight.diffuse = new BABYLON.Color3(0.9, 0.7, 0.5); // 暖橙色調
-        mainLight.specular = new BABYLON.Color3(0.8, 0.6, 0.4);
+        mainLight.intensity = 0.8; // 提升強度以突顯大理石反射
+        mainLight.diffuse = new BABYLON.Color3(1.0, 0.98, 0.95); // 中性白光（略帶暖意）
+        mainLight.specular = new BABYLON.Color3(1.0, 1.0, 1.0); // 純白高光
 
         // === 陰影映射 ===
         this.shadowGenerator = new BABYLON.ShadowGenerator(1024, mainLight);
@@ -35,18 +35,18 @@ export default class LightingSystem {
         this.shadowGenerator.filteringQuality = BABYLON.ShadowGenerator.QUALITY_HIGH;
         this.shadowGenerator.bias = 0.001;
 
-        // === 環境光：低強度暖色調 ===
+        // === 環境光：提升亮度以突顯奢華感 ===
         const hemiLight = new BABYLON.HemisphericLight(
             'hemiLight',
             new BABYLON.Vector3(0, 1, 0),
             this.scene
         );
-        hemiLight.intensity = 0.3; // 大幅降低環境光
-        hemiLight.diffuse = new BABYLON.Color3(0.7, 0.5, 0.4); // 暖色調
-        hemiLight.groundColor = new BABYLON.Color3(0.3, 0.2, 0.15); // 更暗的地面反射
-        hemiLight.specular = new BABYLON.Color3(0.3, 0.25, 0.2);
+        hemiLight.intensity = 0.5; // 提升環境光
+        hemiLight.diffuse = new BABYLON.Color3(0.95, 0.95, 1.0); // 中性偏冷色調
+        hemiLight.groundColor = new BABYLON.Color3(0.4, 0.38, 0.35); // 地面反射（拋光硬木）
+        hemiLight.specular = new BABYLON.Color3(0.9, 0.9, 0.9); // 明亮高光
 
-        // === 吧檯聚光燈：營造重點照明 ===
+        // === 吧檯聚光燈：重點照明大理石檯面 ===
         const barSpotlight = new BABYLON.SpotLight(
             'barSpotlight',
             new BABYLON.Vector3(0, 4, -3),
@@ -55,18 +55,19 @@ export default class LightingSystem {
             2,
             this.scene
         );
-        barSpotlight.intensity = 1.2; // 聚焦在吧檯上
-        barSpotlight.diffuse = new BABYLON.Color3(1.0, 0.8, 0.5); // 溫暖的吧檯燈光
-        barSpotlight.specular = new BABYLON.Color3(0.8, 0.7, 0.5);
+        barSpotlight.intensity = 1.5; // 提升強度聚焦大理石
+        barSpotlight.diffuse = new BABYLON.Color3(1.0, 1.0, 0.98); // 明亮白光
+        barSpotlight.specular = new BABYLON.Color3(1.0, 1.0, 1.0); // 純白高光
 
         // === PBR 環境光照（Image-Based Lighting）===
-        // 這對於 GLB 模型的 PBR 材質至關重要，讓金屬和玻璃材質正確反射光線
+        // 高對比度 HDR 環境讓大理石反射更明顯
         this.scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
             "https://assets.babylonjs.com/environments/environmentSpecular.env",
             this.scene
         );
+        this.scene.environmentIntensity = 1.0; // 確保環境光強度適中
 
-        console.log('✓ 昏暗酒吧光照系統已設置（含 PBR 環境光照）');
+        console.log('✓ 現代奢華光照系統已設置（含增強 PBR 環境光照）');
     }
 
     /**

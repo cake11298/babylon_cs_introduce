@@ -46,42 +46,41 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建地板和牆壁（中世紀風格PBR材質）
+     * 創建地板和牆壁（現代奢華風格PBR材質）
      */
     private createFloorAndWalls(): void {
-        // 地板 - 古老石板地板（中世紀風格）
+        // 地板 - 高級深色拋光硬木/石材（奢華風格）
         const floor = BABYLON.MeshBuilder.CreateGround(
             'floor',
             { width: 30, height: 30 },
             this.scene
         );
         const floorMaterial = new BABYLON.PBRMaterial('floorMat', this.scene);
-        floorMaterial.albedoColor = new BABYLON.Color3(0.15, 0.13, 0.12); // 深灰色石材
+        floorMaterial.albedoColor = new BABYLON.Color3(0.12, 0.10, 0.08); // 深色高級硬木
         floorMaterial.metallic = 0.0;
-        floorMaterial.roughness = 0.95; // 粗糙的石材表面
-        floorMaterial.environmentIntensity = 0.4;
-        // 添加石材的細微反射
-        floorMaterial.reflectivityColor = new BABYLON.Color3(0.08, 0.08, 0.08);
-        floorMaterial.microSurface = 0.5;
-        // 添加凹凸感模擬石材縫隙
-        floorMaterial.bumpTexture = new BABYLON.Texture('', this.scene);
-        floorMaterial.useParallax = true;
-        floorMaterial.parallaxScaleBias = 0.02;
+        floorMaterial.roughness = 0.15; // 低粗糙度 = 拋光效果
+        floorMaterial.environmentIntensity = 0.8; // 提升環境反射
+        // 添加拋光硬木的細微反射
+        floorMaterial.reflectivityColor = new BABYLON.Color3(0.15, 0.13, 0.11);
+        floorMaterial.microSurface = 0.9; // 光滑表面
+        // 添加清漆層（高級拋光硬木）
+        floorMaterial.clearCoat.isEnabled = true;
+        floorMaterial.clearCoat.intensity = 0.4;
+        floorMaterial.clearCoat.roughness = 0.1;
         floor.material = floorMaterial;
         floor.receiveShadows = true;
         floor.checkCollisions = true;
         this.physics.addStaticBoxCollider(floor);
 
-        // 牆壁材質 - 都鐸式/古老石牆風格
+        // 牆壁材質 - 現代深色美學牆面（板岩/深色灰泥）
         const wallMaterial = new BABYLON.PBRMaterial('wallMat', this.scene);
-        wallMaterial.albedoColor = new BABYLON.Color3(0.22, 0.18, 0.15); // 溫暖的泥土棕色
+        wallMaterial.albedoColor = new BABYLON.Color3(0.18, 0.18, 0.19); // 深灰色板岩/灰泥
         wallMaterial.metallic = 0.0;
-        wallMaterial.roughness = 0.98; // 非常粗糙的牆面
-        wallMaterial.environmentIntensity = 0.25;
-        // 添加牆壁的凹凸感
-        wallMaterial.microSurface = 0.4;
-        wallMaterial.useParallax = true;
-        wallMaterial.parallaxScaleBias = 0.03;
+        wallMaterial.roughness = 0.65; // 中等粗糙度（帶紋理的牆面）
+        wallMaterial.environmentIntensity = 0.5;
+        // 添加牆壁的細微反射
+        wallMaterial.reflectivityColor = new BABYLON.Color3(0.12, 0.12, 0.13);
+        wallMaterial.microSurface = 0.6;
 
         // 後牆 - 封閉房間
         const backWall = BABYLON.MeshBuilder.CreateBox(
@@ -150,10 +149,10 @@ export default class BarEnvironment {
     }
 
     /**
-     * 創建吧檯（中世紀風格厚重木質材質）
+     * 創建吧檯（現代奢華拋光大理石）
      */
     private createBarCounter(): void {
-        // 吧檯檯面 - 厚重的古老橡木
+        // 吧檯檯面 - 高級拋光大理石
         const counter = BABYLON.MeshBuilder.CreateBox(
             'barCounter',
             { width: 12, height: 0.2, depth: 2 },
@@ -162,23 +161,23 @@ export default class BarEnvironment {
         counter.position = new BABYLON.Vector3(0, 1.05, -3);
 
         const counterMaterial = new BABYLON.PBRMaterial('counterMat', this.scene);
-        counterMaterial.albedoColor = new BABYLON.Color3(0.16, 0.11, 0.07); // 深棕色古木
-        counterMaterial.metallic = 0.0; // 木材不是金屬
-        counterMaterial.roughness = 0.6; // 半粗糙的老舊木材
-        counterMaterial.environmentIntensity = 0.7;
-        // 添加木質的溫暖反射
-        counterMaterial.reflectivityColor = new BABYLON.Color3(0.2, 0.15, 0.1);
-        counterMaterial.microSurface = 0.7;
-        // 添加輕微的清漆層（歲月留下的痕跡）
+        counterMaterial.albedoColor = new BABYLON.Color3(0.95, 0.95, 0.95); // 白色/淺灰大理石
+        counterMaterial.metallic = 0.0; // 大理石非金屬
+        counterMaterial.roughness = 0.05; // 極低粗糙度 = 高光澤反射
+        counterMaterial.environmentIntensity = 1.2; // 增強環境反射
+        // 大理石的銳利反射
+        counterMaterial.reflectivityColor = new BABYLON.Color3(0.9, 0.9, 0.9);
+        counterMaterial.microSurface = 0.98; // 極光滑表面
+        // 添加高光澤層（拋光效果）
         counterMaterial.clearCoat.isEnabled = true;
-        counterMaterial.clearCoat.intensity = 0.3;
-        counterMaterial.clearCoat.roughness = 0.4;
+        counterMaterial.clearCoat.intensity = 0.6;
+        counterMaterial.clearCoat.roughness = 0.05; // 極低粗糙度
         counter.material = counterMaterial;
         counter.receiveShadows = true;
         counter.checkCollisions = true;
         this.physics.addStaticBoxCollider(counter);
 
-        // 吧檯底座 - 深色古木
+        // 吧檯底座 - 深色拋光石材（奢華風格）
         const base = BABYLON.MeshBuilder.CreateBox(
             'barBase',
             { width: 12, height: 1, depth: 2 },
@@ -187,10 +186,12 @@ export default class BarEnvironment {
         base.position = new BABYLON.Vector3(0, 0.5, -3);
 
         const baseMaterial = new BABYLON.PBRMaterial('baseMat', this.scene);
-        baseMaterial.albedoColor = new BABYLON.Color3(0.10, 0.07, 0.05);
+        baseMaterial.albedoColor = new BABYLON.Color3(0.15, 0.15, 0.15); // 深灰拋光石材
         baseMaterial.metallic = 0.0;
-        baseMaterial.roughness = 0.85; // 更粗糙的底座木材
-        baseMaterial.environmentIntensity = 0.4;
+        baseMaterial.roughness = 0.15; // 低粗糙度 = 拋光效果
+        baseMaterial.environmentIntensity = 0.9;
+        baseMaterial.reflectivityColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+        baseMaterial.microSurface = 0.9;
         base.material = baseMaterial;
         base.receiveShadows = true;
         base.checkCollisions = true;
@@ -420,20 +421,22 @@ export default class BarEnvironment {
         position: BABYLON.Vector3,
         liquidColor: BABYLON.Color3
     ): BABYLON.Mesh {
-        // 瓶身 - 高瘦圓柱
+        // 瓶身 - 高瘦圓柱 (優化: tessellation降至16)
         const body = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_body`,
-            { height: 0.85, diameter: 0.22, tessellation: 24 },
+            { height: 0.85, diameter: 0.22, tessellation: 16 },
             this.scene
         );
+        body.forceSharedVertices(); // 強制共享頂點以實現平滑著色
 
-        // 瓶頸 - 細長
+        // 瓶頸 - 細長 (優化: tessellation降至16)
         const neck = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_neck`,
-            { height: 0.15, diameterTop: 0.06, diameterBottom: 0.11, tessellation: 20 },
+            { height: 0.15, diameterTop: 0.06, diameterBottom: 0.11, tessellation: 16 },
             this.scene
         );
         neck.position.y = 0.5;
+        neck.forceSharedVertices();
 
         // 瓶蓋
         const cap = BABYLON.MeshBuilder.CreateCylinder(
@@ -442,14 +445,16 @@ export default class BarEnvironment {
             this.scene
         );
         cap.position.y = 0.6;
+        cap.forceSharedVertices();
 
-        // 液體
+        // 液體 (優化: tessellation降至16)
         const liquid = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_liquid`,
-            { height: 0.72, diameter: 0.2, tessellation: 24 },
+            { height: 0.72, diameter: 0.2, tessellation: 16 },
             this.scene
         );
         liquid.position.y = -0.065;
+        liquid.forceSharedVertices();
 
         // 高品質玻璃材質
         const glassMaterial = new BABYLON.PBRMaterial(`${name}_glass`, this.scene);
@@ -507,28 +512,31 @@ export default class BarEnvironment {
         position: BABYLON.Vector3,
         liquidColor: BABYLON.Color3
     ): BABYLON.Mesh {
-        // 瓶身 - 標準圓柱
+        // 瓶身 - 標準圓柱 (優化: tessellation降至16)
         const body = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_body`,
-            { height: 0.75, diameter: 0.28, tessellation: 24 },
+            { height: 0.75, diameter: 0.28, tessellation: 16 },
             this.scene
         );
+        body.forceSharedVertices();
 
-        // 瓶肩 - 漸變過渡
+        // 瓶肩 - 漸變過渡 (優化: tessellation降至16)
         const shoulder = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_shoulder`,
-            { height: 0.12, diameterTop: 0.14, diameterBottom: 0.28, tessellation: 20 },
+            { height: 0.12, diameterTop: 0.14, diameterBottom: 0.28, tessellation: 16 },
             this.scene
         );
         shoulder.position.y = 0.435;
+        shoulder.forceSharedVertices();
 
-        // 瓶頸
+        // 瓶頸 (優化: tessellation降至16)
         const neck = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_neck`,
-            { height: 0.14, diameterTop: 0.07, diameterBottom: 0.14, tessellation: 18 },
+            { height: 0.14, diameterTop: 0.07, diameterBottom: 0.14, tessellation: 16 },
             this.scene
         );
         neck.position.y = 0.565;
+        neck.forceSharedVertices();
 
         // 瓶蓋
         const cap = BABYLON.MeshBuilder.CreateCylinder(
@@ -537,14 +545,16 @@ export default class BarEnvironment {
             this.scene
         );
         cap.position.y = 0.67;
+        cap.forceSharedVertices();
 
-        // 液體
+        // 液體 (優化: tessellation降至16)
         const liquid = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_liquid`,
-            { height: 0.65, diameter: 0.26, tessellation: 24 },
+            { height: 0.65, diameter: 0.26, tessellation: 16 },
             this.scene
         );
         liquid.position.y = -0.05;
+        liquid.forceSharedVertices();
 
         // 高品質玻璃材質
         const glassMaterial = new BABYLON.PBRMaterial(`${name}_glass`, this.scene);
@@ -603,28 +613,31 @@ export default class BarEnvironment {
         position: BABYLON.Vector3,
         liquidColor: BABYLON.Color3
     ): BABYLON.Mesh {
-        // 瓶身 - 寬矮圓柱
+        // 瓶身 - 寬矮圓柱 (優化: tessellation降至16)
         const body = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_body`,
-            { height: 0.6, diameter: 0.35, tessellation: 24 },
+            { height: 0.6, diameter: 0.35, tessellation: 16 },
             this.scene
         );
+        body.forceSharedVertices();
 
-        // 瓶肩 - 寬到窄
+        // 瓶肩 - 寬到窄 (優化: tessellation降至16)
         const shoulder = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_shoulder`,
-            { height: 0.15, diameterTop: 0.15, diameterBottom: 0.35, tessellation: 20 },
+            { height: 0.15, diameterTop: 0.15, diameterBottom: 0.35, tessellation: 16 },
             this.scene
         );
         shoulder.position.y = 0.375;
+        shoulder.forceSharedVertices();
 
-        // 瓶頸
+        // 瓶頸 (優化: tessellation降至16)
         const neck = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_neck`,
-            { height: 0.12, diameterTop: 0.08, diameterBottom: 0.15, tessellation: 18 },
+            { height: 0.12, diameterTop: 0.08, diameterBottom: 0.15, tessellation: 16 },
             this.scene
         );
         neck.position.y = 0.51;
+        neck.forceSharedVertices();
 
         // 瓶蓋
         const cap = BABYLON.MeshBuilder.CreateCylinder(
@@ -633,14 +646,16 @@ export default class BarEnvironment {
             this.scene
         );
         cap.position.y = 0.6;
+        cap.forceSharedVertices();
 
-        // 液體
+        // 液體 (優化: tessellation降至16)
         const liquid = BABYLON.MeshBuilder.CreateCylinder(
             `${name}_liquid`,
-            { height: 0.52, diameter: 0.33, tessellation: 24 },
+            { height: 0.52, diameter: 0.33, tessellation: 16 },
             this.scene
         );
         liquid.position.y = -0.04;
+        liquid.forceSharedVertices();
 
         // 高品質玻璃材質
         const glassMaterial = new BABYLON.PBRMaterial(`${name}_glass`, this.scene);

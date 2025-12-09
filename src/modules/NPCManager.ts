@@ -44,7 +44,7 @@ export default class NPCManager {
      * 創建所有 NPC
      */
     private async createNPCs(): Promise<void> {
-        // 創建 NPC 1 - Gustave（調酒社創始社長）- 使用 GLB 模型
+        // 創建 NPC 1 - Gustave（調酒社創始社長）- 使用幾何體
         await this.addNPC({
             name: 'Gustave',
             position: new BABYLON.Vector3(8, 0, -5),
@@ -52,7 +52,7 @@ export default class NPCManager {
             pantsColor: 0x1a1a1a,
             role: '調酒社創始社長',
             gender: 'male',
-            useGLBModel: true,
+            useGLBModel: false, // 改用幾何體以確保穩定性和性能
             dialogues: [
                 '嗨！我是 Gustave Yang，NCU 分子創意飲品研究社的創辦人！',
                 '分子調酒不只是技術，更是科學與藝術的融合。',
@@ -62,7 +62,7 @@ export default class NPCManager {
             ]
         });
 
-        // 創建 NPC 2 - Seaton（調酒社共同創辦人）- 使用 GLB 模型
+        // 創建 NPC 2 - Seaton（調酒社共同創辦人）- 使用幾何體
         await this.addNPC({
             name: 'Seaton',
             position: new BABYLON.Vector3(-8, 0, -5),
@@ -70,7 +70,7 @@ export default class NPCManager {
             pantsColor: 0x333333,
             role: '調酒社共同創辦人',
             gender: 'male',
-            useGLBModel: true,
+            useGLBModel: false, // 改用幾何體以確保穩定性和性能
             dialogues: [
                 '哈囉！我是 Seaton 曦樂，也是社團的共同創辦人！',
                 '我最喜歡日本威士忌，特別是山崎12年。',
