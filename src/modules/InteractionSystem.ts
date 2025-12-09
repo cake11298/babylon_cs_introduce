@@ -30,6 +30,10 @@ export default class InteractionSystem {
     // 互動距離
     private readonly INTERACTION_DISTANCE = 3.0;
 
+    // 性能優化：射線檢測節流
+    private frameCounter = 0;
+    private readonly RAYCAST_THROTTLE_FRAMES = 10; // 每10幀執行一次射線檢測
+
     constructor(
         camera: BABYLON.UniversalCamera,
         scene: BABYLON.Scene,
@@ -89,20 +93,27 @@ export default class InteractionSystem {
     }
 
     /**
-     * 更新瞄準檢測
+     * 更新瞄準檢測（性能優化：節流處理）
      */
     private updateTargeting(): void {
+        // 如果正在持有物品，跳過瞄準檢測
+        if (this.heldObject) {
+            return;
+        }
+
+        // 性能優化：每N幀執行一次射線檢測
+        this.frameCounter++;
+        if (this.frameCounter < this.RAYCAST_THROTTLE_FRAMES) {
+            return;
+        }
+        this.frameCounter = 0;
+
         // 清除之前的高亮
         if (this.targetedObject && this.targetedObject !== this.heldObject) {
             this.highlightLayer.removeMesh(this.targetedObject);
         }
 
         this.targetedObject = null;
-
-        // 如果正在持有物品，跳過瞄準檢測
-        if (this.heldObject) {
-            return;
-        }
 
         // 從相機中心發射射線
         const ray = this.camera.getForwardRay(this.INTERACTION_DISTANCE);

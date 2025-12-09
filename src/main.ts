@@ -209,10 +209,19 @@ class BarSimulator {
      * 處理玩家輸入
      */
     private handleInput(): void {
-        // E 鍵：拾取物品 / 互動
+        // E 鍵：拾取物品 / 互動 NPC
         const ePressed = this.playerController.isKeyPressed('KeyE');
         if (ePressed && !this.lastPickup) {
-            this.interactionSystem.pickupItem();
+            // 檢查目標物件類型
+            const targetedObject = this.interactionSystem.getTargetedObject();
+
+            if (targetedObject && targetedObject.userData.type === 'npc') {
+                // 如果是 NPC，觸發對話互動
+                this.npcManager.interact();
+            } else {
+                // 否則，拾取物品
+                this.interactionSystem.pickupItem();
+            }
         }
         this.lastPickup = ePressed;
 
