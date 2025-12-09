@@ -1247,15 +1247,13 @@ export default class BarEnvironment {
         });
 
         // 註冊為可互動物品（酒瓶）
+        // 注意：酒瓶不是容器，而是倒酒的來源，所以不需要初始化容器
         this.interaction.registerInteractable(
             bottle,
             'bottle' as any,
             'vodka', // 伏特加類型
-            500 // 容量 500ml
+            undefined // 酒瓶不需要容量參數
         );
-
-        // 初始化容器內容（伏特加）
-        this.cocktailSystem.initializeContainer(bottle, 'vodka', 500, 500);
 
         console.log('✅ 測試用圓柱體酒瓶已添加到桌面 (位置: 0, 0.8, 3)');
     }
